@@ -81,7 +81,7 @@ const AppLayout = () => {
           { name: 'Dashboard', href: '/app', icon: Home },
         ];
 
-        if (['partner', 'senior'].includes(userRole)) {
+        if (['partner', 'senior_staff'].includes(userRole)) {
           firmItems.push(
             { name: 'Clients', href: '/app/clients', icon: Users },
             { name: 'Deliverables', href: '/app/deliverables', icon: CheckSquare }
@@ -89,7 +89,10 @@ const AppLayout = () => {
         }
 
         if (userRole === 'partner') {
-          firmItems.push({ name: 'Manage Team', href: '/app/team', icon: UserPlus });
+          firmItems.push(
+            { name: 'Manage Team', href: '/app/team', icon: UserPlus },
+            { name: 'Assign Clients', href: '/app/assign-clients', icon: UserPlus }
+          );
         }
 
         firmItems.push(
@@ -108,7 +111,7 @@ const AppLayout = () => {
           { name: 'Dashboard', href: '/app', icon: Home },
         ];
 
-        if (['partner', 'senior'].includes(userRole)) {
+        if (['partner', 'senior_staff'].includes(userRole)) {
           clientItems.push(
             { name: 'Reports', href: '/app/reports', icon: PieChart },
             { name: 'Deliverables', href: '/app/deliverables', icon: CheckSquare },

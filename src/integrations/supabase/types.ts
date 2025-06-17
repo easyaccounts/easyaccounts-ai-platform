@@ -762,6 +762,58 @@ export type Database = {
           },
         ]
       }
+      team_client_assignments: {
+        Row: {
+          assigned_at: string | null
+          assigned_by: string
+          client_id: string
+          created_at: string | null
+          id: string
+          team_member_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          assigned_at?: string | null
+          assigned_by: string
+          client_id: string
+          created_at?: string | null
+          id?: string
+          team_member_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          assigned_at?: string | null
+          assigned_by?: string
+          client_id?: string
+          created_at?: string | null
+          id?: string
+          team_member_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_client_assignments_assigned_by_fkey"
+            columns: ["assigned_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_client_assignments_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_client_assignments_team_member_id_fkey"
+            columns: ["team_member_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       transactions: {
         Row: {
           amount: number
@@ -887,6 +939,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_access_client: {
+        Args: { target_client_id: string }
+        Returns: boolean
+      }
       get_current_user_business_id: {
         Args: Record<PropertyKey, never>
         Returns: string
@@ -906,6 +962,12 @@ export type Database = {
       get_current_user_view_mode: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      get_user_assigned_clients: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          client_id: string
+        }[]
       }
       set_user_view_mode: {
         Args: { new_mode: string }

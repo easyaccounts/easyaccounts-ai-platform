@@ -32,42 +32,42 @@ export const ClientContextProvider = ({ children }: { children: ReactNode }) => 
     try {
       if (!profile) return;
 
-      let query = supabase.from('clients').select('*');
+      let clientsData: Client[] = [];
 
-      // Filter clients based on user role and assignments
-      if (profile.user_role === 'staff') {
-        // Staff can only see assigned clients - first get their assigned client IDs
-        const { data: assignments } = await supabase
-          .from('user_assignments')
-          .select('client_id')
-          .eq('user_id', profile.id);
+      if (profile.user_role === 'partner') {
+        // Partners can see all firm clients
+        const { data, error } = await supabase
+          .from('clients')
+          .select('*')
+          .eq('firm_id', profile.firm_id)
+          .order('name');
 
-        if (assignments && assignments.length > 0) {
-          const clientIds = assignments.map(a => a.client_id);
-          query = query.in('id', clientIds);
-        } else {
-          // No assignments, return empty array
-          setAvailableClients([]);
-          setLoading(false);
-          return;
-        }
-      } else if (['partner', 'senior_staff', 'management'].includes(profile.user_role)) {
-        // Partners, seniors, and management can see all firm clients
-        if (profile.firm_id) {
-          query = query.eq('firm_id', profile.firm_id);
-        }
+        if (error) throw error;
+        clientsData = data || [];
+      } else if (['senior_staff', 'staff'].includes(profile.user_role)) {
+        // Staff and seniors can only see assigned clients
+        const { data: assignments, error } = await supabase
+          .from('team_client_assignments')
+          .select(`
+            client:clients(*)
+          `)
+          .eq('team_member_id', profile.id);
+
+        if (error) throw error;
+        clientsData = assignments?.map(a => a.client).filter(Boolean) || [];
       } else if (profile.user_role === 'client') {
         // Clients can only see their own record
-        query = query.eq('id', profile.business_id);
+        const { data, error } = await supabase
+          .from('clients')
+          .select('*')
+          .eq('id', profile.business_id)
+          .order('name');
+
+        if (error) throw error;
+        clientsData = data || [];
       }
 
-      const { data, error } = await query.order('name');
-
-      if (error) {
-        console.error('Error fetching clients:', error);
-      } else {
-        setAvailableClients(data || []);
-      }
+      setAvailableClients(clientsData);
     } catch (error) {
       console.error('Error fetching clients:', error);
     } finally {

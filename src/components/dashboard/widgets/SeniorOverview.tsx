@@ -1,149 +1,102 @@
 
 import React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Clock, FileCheck, Users, AlertTriangle, CheckCircle2, Upload } from 'lucide-react';
-
-const pendingApprovals = [
-  { item: 'TechCorp GST Return', staff: 'John Doe', submitted: '2 hours ago', priority: 'High' },
-  { item: 'RetailMax Journal Entry', staff: 'Jane Smith', submitted: '4 hours ago', priority: 'Medium' },
-  { item: 'FinanceFlow Expense Report', staff: 'Mike Johnson', submitted: '1 day ago', priority: 'Low' },
-];
-
-const clientRequests = [
-  { client: 'TechCorp Ltd', request: 'Financial Statement Review', urgency: 'High', due: '2 days' },
-  { client: 'StartupXYZ', request: 'Tax Planning Consultation', urgency: 'Medium', due: '5 days' },
-  { client: 'RetailMax', request: 'Audit Preparation', urgency: 'Low', due: '1 week' },
-];
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Users, CheckSquare, AlertTriangle, TrendingUp } from 'lucide-react';
+import AssignedClientsWidget from '@/components/client/AssignedClientsWidget';
 
 const SeniorOverview = () => {
   return (
     <div className="space-y-6">
-      {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="border-l-4 border-l-orange-500">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Pending Approvals</CardTitle>
-            <Clock className="h-4 w-4 text-orange-500" />
+            <CardTitle className="text-sm font-medium">Assigned Clients</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-600">12</div>
-            <p className="text-xs text-gray-600">3 high priority</p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-l-4 border-l-red-500">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Client Requests</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-red-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">8</div>
-            <p className="text-xs text-gray-600">2 urgent</p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-l-4 border-l-green-500">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Completed Reviews</CardTitle>
-            <FileCheck className="h-4 w-4 text-green-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">45</div>
-            <p className="text-xs text-gray-600">This month</p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-l-4 border-l-blue-500">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Staff Supervised</CardTitle>
-            <Users className="h-4 w-4 text-blue-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">6</div>
-            <p className="text-xs text-gray-600">Active members</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Pending Approvals & Quick Actions */}
-      <div className="grid lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="text-orange-700">Staff Submissions Awaiting Approval</CardTitle>
-            <CardDescription>Review and approve staff work</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {pendingApprovals.map((approval, index) => (
-                <div key={index} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
-                  <div className="flex-1">
-                    <p className="font-medium">{approval.item}</p>
-                    <p className="text-sm text-gray-600">by {approval.staff} • {approval.submitted}</p>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Badge variant={approval.priority === 'High' ? 'destructive' : approval.priority === 'Medium' ? 'default' : 'secondary'}>
-                      {approval.priority}
-                    </Badge>
-                    <Button size="sm" variant="outline">
-                      <CheckCircle2 className="w-4 h-4 mr-1" />
-                      Review
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <div className="text-2xl font-bold">8</div>
+            <p className="text-xs text-muted-foreground">
+              Active assignments
+            </p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle className="text-orange-700">Quick Actions</CardTitle>
-            <CardDescription>Review and manage workflow</CardDescription>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Completed Work</CardTitle>
+            <CheckSquare className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent className="space-y-3">
-            <Button className="w-full justify-start bg-orange-600 hover:bg-orange-700" size="sm">
-              <Upload className="w-4 h-4 mr-2" />
-              Request Client Docs
-            </Button>
-            <Button className="w-full justify-start bg-green-600 hover:bg-green-700" size="sm">
-              <CheckCircle2 className="w-4 h-4 mr-2" />
-              Approve Entry
-            </Button>
-            <Button className="w-full justify-start bg-red-600 hover:bg-red-700" size="sm">
-              <AlertTriangle className="w-4 h-4 mr-2" />
-              Escalate Issue
-            </Button>
+          <CardContent>
+            <div className="text-2xl font-bold">23</div>
+            <p className="text-xs text-muted-foreground">
+              This month
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Pending Reviews</CardTitle>
+            <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">5</div>
+            <p className="text-xs text-muted-foreground">
+              Require attention
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Revenue Impact</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">₹2.4L</div>
+            <p className="text-xs text-muted-foreground">
+              This quarter
+            </p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Client Requests Queue */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-orange-700">Client Request Queue</CardTitle>
-          <CardDescription>Manage incoming client requests</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {clientRequests.map((request, index) => (
-              <div key={index} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
-                <div className="flex-1">
-                  <p className="font-medium">{request.client}</p>
-                  <p className="text-sm text-gray-600">{request.request}</p>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Badge variant={request.urgency === 'High' ? 'destructive' : request.urgency === 'Medium' ? 'default' : 'secondary'}>
-                    {request.urgency}
-                  </Badge>
-                  <span className="text-sm text-gray-500">Due: {request.due}</span>
-                </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <AssignedClientsWidget />
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>Team Performance</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Staff productivity</span>
+                <span className="text-sm text-muted-foreground">92%</span>
               </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div className="bg-blue-600 h-2 rounded-full" style={{ width: '92%' }}></div>
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Client satisfaction</span>
+                <span className="text-sm text-muted-foreground">88%</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div className="bg-green-600 h-2 rounded-full" style={{ width: '88%' }}></div>
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">On-time delivery</span>
+                <span className="text-sm text-muted-foreground">95%</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div className="bg-blue-600 h-2 rounded-full" style={{ width: '95%' }}></div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };
