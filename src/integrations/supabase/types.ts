@@ -211,6 +211,57 @@ export type Database = {
           },
         ]
       }
+      deliverable_tasks: {
+        Row: {
+          created_at: string | null
+          created_by: string
+          deliverable_id: string
+          description: string | null
+          due_date: string | null
+          id: string
+          status: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by: string
+          deliverable_id: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          status?: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string
+          deliverable_id?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          status?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deliverable_tasks_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deliverable_tasks_deliverable_id_fkey"
+            columns: ["deliverable_id"]
+            isOneToOne: false
+            referencedRelation: "deliverables"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       deliverables: {
         Row: {
           assigned_to: string | null
@@ -762,6 +813,97 @@ export type Database = {
           },
         ]
       }
+      task_assignments: {
+        Row: {
+          assigned_at: string | null
+          assigned_by: string
+          assigned_to: string
+          created_at: string | null
+          id: string
+          notes: string | null
+          task_id: string
+        }
+        Insert: {
+          assigned_at?: string | null
+          assigned_by: string
+          assigned_to: string
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          task_id: string
+        }
+        Update: {
+          assigned_at?: string | null
+          assigned_by?: string
+          assigned_to?: string
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_assignments_assigned_by_fkey"
+            columns: ["assigned_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_assignments_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_assignments_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "deliverable_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      task_comments: {
+        Row: {
+          comment_text: string
+          created_at: string | null
+          created_by: string
+          id: string
+          task_id: string
+        }
+        Insert: {
+          comment_text: string
+          created_at?: string | null
+          created_by: string
+          id?: string
+          task_id: string
+        }
+        Update: {
+          comment_text?: string
+          created_at?: string | null
+          created_by?: string
+          id?: string
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_comments_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_comments_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "deliverable_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       team_client_assignments: {
         Row: {
           assigned_at: string | null
@@ -967,6 +1109,17 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: {
           client_id: string
+        }[]
+      }
+      get_user_assigned_tasks: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          task_id: string
+          deliverable_id: string
+          client_id: string
+          title: string
+          status: string
+          due_date: string
         }[]
       }
       set_user_view_mode: {

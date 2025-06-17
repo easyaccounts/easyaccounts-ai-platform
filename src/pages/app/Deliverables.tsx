@@ -16,10 +16,11 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, FileUp, MessageSquare } from 'lucide-react';
+import { Plus, FileUp, MessageSquare, CheckSquare } from 'lucide-react';
 import { toast } from 'sonner';
 import { Database } from '@/integrations/supabase/types';
 import AddEditDeliverableModal from '@/components/deliverables/AddEditDeliverableModal';
+import { useNavigate } from 'react-router-dom';
 
 type Deliverable = Database['public']['Tables']['deliverables']['Row'] & {
   clients?: { name: string };
@@ -27,6 +28,7 @@ type Deliverable = Database['public']['Tables']['deliverables']['Row'] & {
 };
 
 const Deliverables = () => {
+  const navigate = useNavigate();
   const { profile } = useAuth();
   const { selectedClient } = useClientContext();
   const { viewMode } = useSessionContext();
@@ -118,6 +120,10 @@ const Deliverables = () => {
   const handleEditDeliverable = (deliverable: Deliverable) => {
     setEditingDeliverable(deliverable);
     setModalOpen(true);
+  };
+
+  const handleViewTasks = (deliverableId: string) => {
+    navigate(`/app/deliverables/${deliverableId}/tasks`);
   };
 
   const handleStatusUpdate = async (deliverableId: string, newStatus: string) => {
@@ -257,6 +263,13 @@ const Deliverables = () => {
                     </TableCell>
                     <TableCell>
                       <div className="flex space-x-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleViewTasks(deliverable.id)}
+                        >
+                          <CheckSquare className="w-4 h-4" />
+                        </Button>
                         {canManageDeliverables && (
                           <Button
                             variant="ghost"

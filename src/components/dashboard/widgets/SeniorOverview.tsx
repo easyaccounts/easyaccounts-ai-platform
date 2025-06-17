@@ -3,6 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, CheckSquare, AlertTriangle, TrendingUp } from 'lucide-react';
 import AssignedClientsWidget from '@/components/client/AssignedClientsWidget';
+import MyTasksWidget from '@/components/tasks/MyTasksWidget';
 
 const SeniorOverview = () => {
   return (
@@ -62,40 +63,8 @@ const SeniorOverview = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <MyTasksWidget />
         <AssignedClientsWidget />
-        
-        <Card>
-          <CardHeader>
-            <CardTitle>Team Performance</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Staff productivity</span>
-                <span className="text-sm text-muted-foreground">92%</span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div className="bg-blue-600 h-2 rounded-full" style={{ width: '92%' }}></div>
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Client satisfaction</span>
-                <span className="text-sm text-muted-foreground">88%</span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div className="bg-green-600 h-2 rounded-full" style={{ width: '88%' }}></div>
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">On-time delivery</span>
-                <span className="text-sm text-muted-foreground">95%</span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div className="bg-blue-600 h-2 rounded-full" style={{ width: '95%' }}></div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </div>
   );

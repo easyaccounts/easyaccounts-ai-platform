@@ -16,6 +16,8 @@ import Clients from "./pages/app/Clients";
 import TeamManagement from "./pages/app/TeamManagement";
 import AssignClients from "./pages/app/AssignClients";
 import Deliverables from "./pages/app/Deliverables";
+import DeliverableTasks from "./pages/app/DeliverableTasks";
+import MyTasks from "./pages/app/MyTasks";
 import Reports from "./pages/app/Reports";
 import Requests from "./pages/app/Requests";
 import NotFound from "./pages/NotFound";
@@ -46,6 +48,8 @@ function App() {
                     <Route path="team" element={<TeamManagement />} />
                     <Route path="assign-clients" element={<AssignClients />} />
                     <Route path="deliverables" element={<Deliverables />} />
+                    <Route path="deliverables/:deliverableId/tasks" element={<DeliverableTasks />} />
+                    <Route path="my-tasks" element={<MyTasks />} />
                     <Route path="reports" element={<Reports />} />
                     <Route path="requests" element={<Requests />} />
                   </Route>

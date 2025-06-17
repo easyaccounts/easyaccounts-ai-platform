@@ -3,6 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CheckSquare, Clock, FileText, Building2 } from 'lucide-react';
 import AssignedClientsWidget from '@/components/client/AssignedClientsWidget';
+import MyTasksWidget from '@/components/tasks/MyTasksWidget';
 
 const StaffOverview = () => {
   return (
@@ -62,38 +63,8 @@ const StaffOverview = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <MyTasksWidget />
         <AssignedClientsWidget />
-        
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Activity</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center space-x-4">
-                <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium">Journal entry completed</p>
-                  <p className="text-xs text-muted-foreground">ABC Corp - 2 hours ago</p>
-                </div>
-              </div>
-              <div className="flex items-center space-x-4">
-                <div className="w-2 h-2 bg-green-600 rounded-full"></div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium">Documents uploaded</p>
-                  <p className="text-xs text-muted-foreground">XYZ Ltd - 4 hours ago</p>
-                </div>
-              </div>
-              <div className="flex items-center space-x-4">
-                <div className="w-2 h-2 bg-yellow-600 rounded-full"></div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium">Review required</p>
-                  <p className="text-xs text-muted-foreground">DEF Inc - 1 day ago</p>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </div>
   );
