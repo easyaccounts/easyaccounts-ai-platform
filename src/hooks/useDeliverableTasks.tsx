@@ -9,7 +9,7 @@ type DeliverableTask = Database['public']['Tables']['deliverable_tasks']['Row'] 
     assigned_to: string;
     profiles: { first_name: string; last_name: string };
   }>;
-  deliverable?: {
+  deliverables?: {
     title: string;
     client_id: string;
     clients?: { name: string };
@@ -37,7 +37,7 @@ export const useDeliverableTasks = () => {
           *,
           task_assignments!inner(
             assigned_to,
-            profiles(first_name, last_name)
+            profiles!task_assignments_assigned_to_fkey(first_name, last_name)
           ),
           deliverables(
             title,
@@ -46,7 +46,7 @@ export const useDeliverableTasks = () => {
           )
         `)
         .eq('task_assignments.assigned_to', profile?.id)
-        .order('due_date', { ascending: true, nullsLast: true });
+        .order('due_date', { ascending: true, nullsFirst: true });
 
       if (error) throw error;
       setMyTasks(data || []);

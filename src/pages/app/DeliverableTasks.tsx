@@ -89,7 +89,7 @@ const DeliverableTasks = () => {
           *,
           task_assignments(
             assigned_to,
-            profiles(first_name, last_name)
+            profiles!task_assignments_assigned_to_fkey(first_name, last_name)
           )
         `)
         .eq('deliverable_id', deliverableId);
