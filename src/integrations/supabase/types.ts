@@ -121,7 +121,9 @@ export type Database = {
       clients: {
         Row: {
           address: string | null
+          billing_cycle: string | null
           business_id: string | null
+          business_type: string | null
           city: string | null
           country: string | null
           created_at: string
@@ -129,17 +131,24 @@ export type Database = {
           email: string | null
           firm_id: string | null
           gst_number: string | null
+          gstin: string | null
           id: string
+          industry: string | null
+          monthly_fee: number | null
           name: string
           pan_number: string | null
           phone: string | null
           postal_code: string | null
           state: string | null
+          status: string | null
+          tags: string[] | null
           updated_at: string
         }
         Insert: {
           address?: string | null
+          billing_cycle?: string | null
           business_id?: string | null
+          business_type?: string | null
           city?: string | null
           country?: string | null
           created_at?: string
@@ -147,17 +156,24 @@ export type Database = {
           email?: string | null
           firm_id?: string | null
           gst_number?: string | null
+          gstin?: string | null
           id?: string
+          industry?: string | null
+          monthly_fee?: number | null
           name: string
           pan_number?: string | null
           phone?: string | null
           postal_code?: string | null
           state?: string | null
+          status?: string | null
+          tags?: string[] | null
           updated_at?: string
         }
         Update: {
           address?: string | null
+          billing_cycle?: string | null
           business_id?: string | null
+          business_type?: string | null
           city?: string | null
           country?: string | null
           created_at?: string
@@ -165,12 +181,17 @@ export type Database = {
           email?: string | null
           firm_id?: string | null
           gst_number?: string | null
+          gstin?: string | null
           id?: string
+          industry?: string | null
+          monthly_fee?: number | null
           name?: string
           pan_number?: string | null
           phone?: string | null
           postal_code?: string | null
           state?: string | null
+          status?: string | null
+          tags?: string[] | null
           updated_at?: string
         }
         Relationships: [
@@ -197,10 +218,14 @@ export type Database = {
           client_id: string
           created_at: string
           created_by: string
+          deliverable_type: string | null
           description: string | null
           due_date: string | null
+          file_urls: string[] | null
           firm_id: string | null
+          frequency: string | null
           id: string
+          input_checklist: Json | null
           priority: string
           status: string
           title: string
@@ -212,10 +237,14 @@ export type Database = {
           client_id: string
           created_at?: string
           created_by: string
+          deliverable_type?: string | null
           description?: string | null
           due_date?: string | null
+          file_urls?: string[] | null
           firm_id?: string | null
+          frequency?: string | null
           id?: string
+          input_checklist?: Json | null
           priority?: string
           status?: string
           title: string
@@ -227,10 +256,14 @@ export type Database = {
           client_id?: string
           created_at?: string
           created_by?: string
+          deliverable_type?: string | null
           description?: string | null
           due_date?: string | null
+          file_urls?: string[] | null
           firm_id?: string | null
+          frequency?: string | null
           id?: string
+          input_checklist?: Json | null
           priority?: string
           status?: string
           title?: string
@@ -542,8 +575,126 @@ export type Database = {
           },
         ]
       }
+      reports: {
+        Row: {
+          approved_by: string | null
+          business_id: string | null
+          client_id: string
+          created_at: string | null
+          created_by: string
+          file_url: string | null
+          firm_id: string | null
+          id: string
+          notes: string | null
+          period_end: string | null
+          period_start: string | null
+          report_data: Json | null
+          report_type: string
+          status: string | null
+          title: string
+          updated_at: string | null
+          version: number | null
+        }
+        Insert: {
+          approved_by?: string | null
+          business_id?: string | null
+          client_id: string
+          created_at?: string | null
+          created_by: string
+          file_url?: string | null
+          firm_id?: string | null
+          id?: string
+          notes?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          report_data?: Json | null
+          report_type: string
+          status?: string | null
+          title: string
+          updated_at?: string | null
+          version?: number | null
+        }
+        Update: {
+          approved_by?: string | null
+          business_id?: string | null
+          client_id?: string
+          created_at?: string | null
+          created_by?: string
+          file_url?: string | null
+          firm_id?: string | null
+          id?: string
+          notes?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          report_data?: Json | null
+          report_type?: string
+          status?: string | null
+          title?: string
+          updated_at?: string | null
+          version?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reports_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_firm_id_fkey"
+            columns: ["firm_id"]
+            isOneToOne: false
+            referencedRelation: "firms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      request_messages: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_internal: boolean | null
+          message_text: string
+          request_id: string
+          sender_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_internal?: boolean | null
+          message_text: string
+          request_id: string
+          sender_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_internal?: boolean | null
+          message_text?: string
+          request_id?: string
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "request_messages_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       requests: {
         Row: {
+          assigned_to: string | null
           business_id: string | null
           client_id: string
           created_at: string
@@ -552,11 +703,13 @@ export type Database = {
           firm_id: string | null
           id: string
           priority: string
+          request_type: string | null
           status: string
           title: string
           updated_at: string
         }
         Insert: {
+          assigned_to?: string | null
           business_id?: string | null
           client_id: string
           created_at?: string
@@ -565,11 +718,13 @@ export type Database = {
           firm_id?: string | null
           id?: string
           priority?: string
+          request_type?: string | null
           status?: string
           title: string
           updated_at?: string
         }
         Update: {
+          assigned_to?: string | null
           business_id?: string | null
           client_id?: string
           created_at?: string
@@ -578,6 +733,7 @@ export type Database = {
           firm_id?: string | null
           id?: string
           priority?: string
+          request_type?: string | null
           status?: string
           title?: string
           updated_at?: string
