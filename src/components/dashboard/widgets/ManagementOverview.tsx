@@ -109,7 +109,7 @@ const ManagementOverview = () => {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="department" />
                 <YAxis />
-                <Tooltip formatter={(value) => [`₹${(value / 1000).toFixed(0)}K`, '']} />
+                <Tooltip formatter={(value) => [`₹${(Number(value) / 1000).toFixed(0)}K`, '']} />
                 <Bar dataKey="profit" fill="#10b981" name="Profit" />
                 <Bar dataKey="expenses" fill="#ef4444" name="Expenses" />
               </BarChart>
