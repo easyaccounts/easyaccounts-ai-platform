@@ -250,10 +250,10 @@ const TeamManagement = () => {
       </Card>
 
       <AddEditUserModal
-        open={modalOpen}
+        isOpen={modalOpen}
         onClose={handleModalClose}
         user={editingUser}
-        firmId={profile?.firm_id}
+        onUserUpdated={handleModalClose}
       />
     </div>
   );
