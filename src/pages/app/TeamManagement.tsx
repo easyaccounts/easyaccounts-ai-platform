@@ -16,15 +16,11 @@ import { Badge } from '@/components/ui/badge';
 import { UserPlus, Edit, UserX } from 'lucide-react';
 import { toast } from 'sonner';
 import AddEditUserModal from '@/components/team/AddEditUserModal';
+import { Database } from '@/integrations/supabase/types';
 
-interface TeamMember {
-  id: string;
-  first_name: string;
-  last_name: string;
-  email: string;
-  phone: string;
-  user_role: string;
-  status: string;
+type Profile = Database['public']['Tables']['profiles']['Row'];
+
+interface TeamMember extends Profile {
   assigned_clients: Array<{ name: string }>;
 }
 
@@ -55,7 +51,14 @@ const TeamManagement = () => {
           email,
           phone,
           user_role,
-          status
+          status,
+          user_group,
+          firm_id,
+          business_id,
+          firm_name,
+          business_name,
+          created_at,
+          updated_at
         `)
         .eq('firm_id', profile?.firm_id)
         .neq('id', profile?.id); // Exclude current user

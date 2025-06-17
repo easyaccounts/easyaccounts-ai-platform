@@ -36,13 +36,21 @@ export const ClientContextProvider = ({ children }: { children: ReactNode }) => 
 
       // Filter clients based on user role and assignments
       if (profile.user_role === 'staff') {
-        // Staff can only see assigned clients
-        query = query.in('id', 
-          supabase
-            .from('user_assignments')
-            .select('client_id')
-            .eq('user_id', profile.id)
-        );
+        // Staff can only see assigned clients - first get their assigned client IDs
+        const { data: assignments } = await supabase
+          .from('user_assignments')
+          .select('client_id')
+          .eq('user_id', profile.id);
+
+        if (assignments && assignments.length > 0) {
+          const clientIds = assignments.map(a => a.client_id);
+          query = query.in('id', clientIds);
+        } else {
+          // No assignments, return empty array
+          setAvailableClients([]);
+          setLoading(false);
+          return;
+        }
       } else if (['partner', 'senior_staff', 'management'].includes(profile.user_role)) {
         // Partners, seniors, and management can see all firm clients
         if (profile.firm_id) {
