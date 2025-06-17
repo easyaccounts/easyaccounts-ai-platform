@@ -96,7 +96,7 @@ const MyTasksWidget = () => {
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">{task.title}</p>
                       <p className="text-xs text-muted-foreground">
-                        {task.deliverable?.clients?.name} • {task.deliverable?.title}
+                        {task.deliverables?.clients?.name} • {task.deliverables?.title}
                       </p>
                     </div>
                     <div className="flex items-center space-x-2">

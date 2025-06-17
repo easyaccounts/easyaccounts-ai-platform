@@ -137,10 +137,10 @@ const MyTasks = () => {
                       </div>
                     </TableCell>
                     <TableCell>
-                      {task.deliverable?.clients?.name}
+                      {task.deliverables?.clients?.name}
                     </TableCell>
                     <TableCell>
-                      {task.deliverable?.title}
+                      {task.deliverables?.title}
                     </TableCell>
                     <TableCell>
                       <Badge variant={getStatusColor(task.status)}>
