@@ -12,17 +12,25 @@ interface SessionContextType {
 const SessionContext = createContext<SessionContextType | undefined>(undefined);
 
 export const SessionContextProvider = ({ children }: { children: ReactNode }) => {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [viewMode, setViewModeState] = useState<'firm' | 'client'>('firm');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (user) {
-      fetchViewMode();
+    if (user && profile) {
+      // Business owners always stay in firm view (which is really their business view)
+      if (profile.user_group === 'business_owner') {
+        setViewModeState('firm');
+        setLoading(false);
+      } else if (profile.user_group === 'chartered_accountant') {
+        fetchViewMode();
+      } else {
+        setLoading(false);
+      }
     } else {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, profile]);
 
   const fetchViewMode = async () => {
     try {
@@ -45,6 +53,11 @@ export const SessionContextProvider = ({ children }: { children: ReactNode }) =>
   };
 
   const setViewMode = async (mode: 'firm' | 'client') => {
+    // Only allow chartered accountant users to change view mode
+    if (profile?.user_group !== 'chartered_accountant') {
+      return;
+    }
+
     try {
       const { error } = await supabase.rpc('set_user_view_mode', {
         new_mode: mode

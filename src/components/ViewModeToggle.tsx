@@ -13,13 +13,14 @@ import ClientSelector from './client/ClientSelector';
 
 interface ViewModeToggleProps {
   userRole?: string;
+  userGroup?: string;
 }
 
-const ViewModeToggle = ({ userRole }: ViewModeToggleProps) => {
+const ViewModeToggle = ({ userRole, userGroup }: ViewModeToggleProps) => {
   const { viewMode, setViewMode, loading } = useSessionContext();
 
-  // Only show toggle for partners and management who can switch views
-  if (!['partner', 'management', 'senior_staff'].includes(userRole || '')) {
+  // Only show toggle for chartered accountant users
+  if (userGroup !== 'chartered_accountant') {
     return null;
   }
 
@@ -40,7 +41,7 @@ const ViewModeToggle = ({ userRole }: ViewModeToggleProps) => {
     <div className="flex items-center space-x-3">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="sm">
+          <Button variant="ghost" size="sm" className="px-3 py-2">
             {viewMode === 'firm' ? (
               <>
                 <Building2 className="w-4 h-4 mr-2" />

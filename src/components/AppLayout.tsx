@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Link, useLocation, Outlet } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -16,8 +17,6 @@ import {
   BarChart3,
   Users,
   FileText,
-  CreditCard,
-  Receipt,
   CheckSquare,
   MessageSquare,
   Upload,
@@ -27,68 +26,126 @@ import {
   Menu,
   X,
   LogOut,
-  Home
+  Home,
+  Activity,
+  Briefcase,
+  FolderOpen
 } from 'lucide-react';
 import ViewModeToggle from './ViewModeToggle';
+import ClientViewBanner from './ClientViewBanner';
 import { useSessionContext } from '@/hooks/useSessionContext';
+import { useClientContext } from '@/hooks/useClientContext';
 
 const AppLayout = () => {
   const { profile, signOut } = useAuth();
   const { viewMode } = useSessionContext();
+  const { selectedClient } = useClientContext();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const allNavigationItems = [
-    { name: 'Dashboard', href: '/app', icon: Home },
-    { name: 'Clients', href: '/app/clients', icon: Users },
-    { name: 'Invoices', href: '/app/invoices', icon: FileText },
-    { name: 'Transactions', href: '/app/transactions', icon: CreditCard },
-    { name: 'Expenses', href: '/app/expenses', icon: Receipt },
-    { name: 'Deliverables', href: '/app/deliverables', icon: CheckSquare },
-    { name: 'Requests', href: '/app/requests', icon: MessageSquare },
-    { name: 'Magic Upload', href: '/app/upload', icon: Upload },
-    { name: 'Reports', href: '/app/reports', icon: PieChart },
-    { name: 'Chart of Accounts', href: '/app/accounts', icon: BarChart3 },
-  ];
-
-  // Filter navigation items based on user role and view mode
+  // Define navigation items based on user group, role, and view mode
   const getNavigationItems = () => {
-    let filteredItems = [...allNavigationItems];
-    const userRole = profile?.user_role;
-    const userGroup = profile?.user_group;
+    if (!profile) return [];
 
-    if (viewMode === 'firm') {
-      // Firm view navigation
-      if (userRole === 'partner') {
-        const allowedItems = ['Dashboard', 'Clients', 'Invoices', 'Deliverables', 'Requests', 'Reports'];
-        filteredItems = allNavigationItems.filter(item => allowedItems.includes(item.name));
-      } else if (userRole === 'senior_staff' || userRole === 'staff') {
-        const allowedItems = ['Dashboard', 'Deliverables', 'Requests', 'Magic Upload'];
-        filteredItems = allNavigationItems.filter(item => allowedItems.includes(item.name));
+    const userGroup = profile.user_group;
+    const userRole = profile.user_role;
+
+    // Business Owner Group - no view switching
+    if (userGroup === 'business_owner') {
+      const baseItems = [
+        { name: 'Dashboard', href: '/app', icon: Home },
+        { name: 'Reports', href: '/app/reports', icon: PieChart },
+        { name: 'Deliverables', href: '/app/deliverables', icon: CheckSquare },
+        { name: 'Requests', href: '/app/requests', icon: MessageSquare },
+        { name: 'Documents', href: '/app/documents', icon: FolderOpen },
+        { name: 'Activity', href: '/app/activity', icon: Activity },
+      ];
+
+      if (userRole === 'management') {
+        baseItems.splice(-1, 0, { name: 'Business Settings', href: '/app/business-settings', icon: Settings });
+      } else if (userRole === 'accounting_team') {
+        baseItems.splice(2, 0, 
+          { name: 'Journal Entries', href: '/app/journal-entries', icon: FileText },
+          { name: 'Uploads', href: '/app/uploads', icon: Upload }
+        );
       }
-    } else {
-      // Client view navigation
-      if (userRole === 'client' || userRole === 'partner') {
-        const allowedItems = ['Dashboard', 'Transactions', 'Invoices', 'Requests', 'Reports'];
-        filteredItems = allNavigationItems.filter(item => allowedItems.includes(item.name));
+
+      return baseItems;
+    }
+
+    // Chartered Accountant Group - view mode dependent
+    if (userGroup === 'chartered_accountant') {
+      if (viewMode === 'firm') {
+        // Firm View Navigation
+        const firmItems = [
+          { name: 'Dashboard', href: '/app', icon: Home },
+        ];
+
+        if (['partner', 'senior'].includes(userRole)) {
+          firmItems.push(
+            { name: 'Clients', href: '/app/clients', icon: Users },
+            { name: 'Deliverables', href: '/app/deliverables', icon: CheckSquare }
+          );
+        }
+
+        if (userRole === 'partner') {
+          firmItems.push({ name: 'Manage Team', href: '/app/team', icon: UserPlus });
+        }
+
+        firmItems.push(
+          { name: 'Tasks', href: '/app/tasks', icon: Briefcase },
+          { name: 'Activity', href: '/app/activity', icon: Activity }
+        );
+
+        if (userRole === 'partner') {
+          firmItems.push({ name: 'Firm Settings', href: '/app/settings', icon: Settings });
+        }
+
+        return firmItems;
+      } else {
+        // Client View Navigation
+        const clientItems = [
+          { name: 'Dashboard', href: '/app', icon: Home },
+        ];
+
+        if (['partner', 'senior'].includes(userRole)) {
+          clientItems.push(
+            { name: 'Reports', href: '/app/reports', icon: PieChart },
+            { name: 'Deliverables', href: '/app/deliverables', icon: CheckSquare },
+            { name: 'Requests', href: '/app/requests', icon: MessageSquare },
+            { name: 'Documents', href: '/app/documents', icon: FolderOpen },
+            { name: 'Activity', href: '/app/activity', icon: Activity }
+          );
+        } else if (userRole === 'staff') {
+          clientItems.push(
+            { name: 'Journal Entries', href: '/app/journal-entries', icon: FileText },
+            { name: 'Uploads', href: '/app/uploads', icon: Upload },
+            { name: 'Documents', href: '/app/documents', icon: FolderOpen },
+            { name: 'Activity', href: '/app/activity', icon: Activity }
+          );
+        }
+
+        return clientItems;
       }
     }
 
-    // Add team management for partners and management only (firm view only)
-    if (viewMode === 'firm' && (userRole === 'partner' || userRole === 'management')) {
-      filteredItems.push({ name: 'Team', href: '/app/team', icon: UserPlus });
-    }
-
-    // Always add Settings at the end
-    filteredItems.push({ name: 'Settings', href: '/app/settings', icon: Settings });
-
-    return filteredItems;
+    return [];
   };
 
   const navigationItems = getNavigationItems();
 
   const getInitials = (firstName?: string, lastName?: string) => {
     return `${firstName?.charAt(0) || ''}${lastName?.charAt(0) || ''}`.toUpperCase();
+  };
+
+  const getUserGroupLabel = () => {
+    if (profile?.user_group === 'chartered_accountant') return 'CA Firm';
+    if (profile?.user_group === 'business_owner') return 'Business';
+    return profile?.user_group;
+  };
+
+  const shouldShowViewBanner = () => {
+    return profile?.user_group === 'chartered_accountant' && viewMode === 'client' && selectedClient;
   };
 
   return (
@@ -177,13 +234,11 @@ const AppLayout = () => {
             </div>
 
             <div className="flex items-center space-x-4">
-              <ViewModeToggle userRole={profile?.user_role} />
+              <ViewModeToggle userRole={profile?.user_role} userGroup={profile?.user_group} />
               
               <div className="hidden md:flex items-center space-x-2">
                 <Badge variant="secondary">{profile?.user_role}</Badge>
-                <Badge variant="outline">
-                  {profile?.user_group === 'accounting_firm' ? 'CA Firm' : 'Business'}
-                </Badge>
+                <Badge variant="outline">{getUserGroupLabel()}</Badge>
               </div>
 
               <DropdownMenu>
@@ -224,6 +279,9 @@ const AppLayout = () => {
             </div>
           </div>
         </header>
+
+        {/* Client View Banner */}
+        {shouldShowViewBanner() && <ClientViewBanner />}
 
         {/* Page Content */}
         <main className="flex-1 overflow-auto">
