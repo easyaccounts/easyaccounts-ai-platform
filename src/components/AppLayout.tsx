@@ -36,7 +36,7 @@ const AppLayout = () => {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const navigationItems = [
+  const allNavigationItems = [
     { name: 'Dashboard', href: '/app', icon: Home },
     { name: 'Clients', href: '/app/clients', icon: Users },
     { name: 'Invoices', href: '/app/invoices', icon: FileText },
@@ -49,12 +49,28 @@ const AppLayout = () => {
     { name: 'Chart of Accounts', href: '/app/accounts', icon: BarChart3 },
   ];
 
-  // Add team management for partners and management only
-  if (profile?.user_role === 'partner' || profile?.user_role === 'management') {
-    navigationItems.push({ name: 'Team', href: '/app/team', icon: UserPlus });
-  }
+  // Filter navigation items based on user role
+  const getNavigationItems = () => {
+    let filteredItems = [...allNavigationItems];
 
-  navigationItems.push({ name: 'Settings', href: '/app/settings', icon: Settings });
+    // For partners, only show specific items
+    if (profile?.user_role === 'partner') {
+      const allowedItems = ['Dashboard', 'Clients', 'Invoices', 'Deliverables', 'Requests', 'Reports'];
+      filteredItems = allNavigationItems.filter(item => allowedItems.includes(item.name));
+    }
+
+    // Add team management for partners and management only
+    if (profile?.user_role === 'partner' || profile?.user_role === 'management') {
+      filteredItems.push({ name: 'Team', href: '/app/team', icon: UserPlus });
+    }
+
+    // Always add Settings at the end
+    filteredItems.push({ name: 'Settings', href: '/app/settings', icon: Settings });
+
+    return filteredItems;
+  };
+
+  const navigationItems = getNavigationItems();
 
   const getInitials = (firstName?: string, lastName?: string) => {
     return `${firstName?.charAt(0) || ''}${lastName?.charAt(0) || ''}`.toUpperCase();
