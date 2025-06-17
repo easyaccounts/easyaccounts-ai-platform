@@ -20,7 +20,7 @@ const Dashboard = () => {
     dashboardType = 'client';
   }
 
-  return <DashboardRenderer userRole={dashboardType} />;
+  return <DashboardRenderer profile={profile} loading={false} error={null} />;
 };
 
 export default Dashboard;

@@ -35,7 +35,7 @@ export const SessionContextProvider = ({ children }: { children: ReactNode }) =>
       if (error && error.code !== 'PGRST116') {
         console.error('Error fetching view mode:', error);
       } else {
-        setViewModeState(data?.view_mode || 'firm');
+        setViewModeState((data?.view_mode as 'firm' | 'client') || 'firm');
       }
     } catch (error) {
       console.error('Error fetching view mode:', error);

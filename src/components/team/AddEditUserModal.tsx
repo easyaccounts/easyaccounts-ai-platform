@@ -48,8 +48,8 @@ const AddEditUserModal = ({ open, onClose, user, firmId }: AddEditUserModalProps
     last_name: '',
     email: '',
     phone: '',
-    user_role: 'staff',
-    status: 'active',
+    user_role: 'staff' as const,
+    status: 'active' as const,
   });
   const [clients, setClients] = useState<Client[]>([]);
   const [selectedClients, setSelectedClients] = useState<string[]>([]);
@@ -65,8 +65,8 @@ const AddEditUserModal = ({ open, onClose, user, firmId }: AddEditUserModalProps
           last_name: user.last_name || '',
           email: user.email || '',
           phone: user.phone || '',
-          user_role: user.user_role || 'staff',
-          status: user.status || 'active',
+          user_role: user.user_role as 'staff' | 'senior_staff',
+          status: user.status as 'active' | 'inactive',
         });
         fetchUserAssignments(user.id);
       } else {
@@ -198,10 +198,11 @@ const AddEditUserModal = ({ open, onClose, user, firmId }: AddEditUserModalProps
 
       // Insert new assignments
       if (selectedClients.length > 0) {
+        const currentUser = await supabase.auth.getUser();
         const assignments = selectedClients.map(clientId => ({
           user_id: userId,
           client_id: clientId,
-          assigned_by: (await supabase.auth.getUser()).data.user?.id,
+          assigned_by: currentUser.data.user?.id,
         }));
 
         const { error } = await supabase
@@ -272,7 +273,7 @@ const AddEditUserModal = ({ open, onClose, user, firmId }: AddEditUserModalProps
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="user_role">Role</Label>
-              <Select value={formData.user_role} onValueChange={(value) => handleInputChange('user_role', value)}>
+              <Select value={formData.user_role} onValueChange={(value: 'senior_staff' | 'staff') => handleInputChange('user_role', value)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -284,7 +285,7 @@ const AddEditUserModal = ({ open, onClose, user, firmId }: AddEditUserModalProps
             </div>
             <div>
               <Label htmlFor="status">Status</Label>
-              <Select value={formData.status} onValueChange={(value) => handleInputChange('status', value)}>
+              <Select value={formData.status} onValueChange={(value: 'active' | 'inactive') => handleInputChange('status', value)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
