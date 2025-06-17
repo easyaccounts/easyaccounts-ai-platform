@@ -49,13 +49,10 @@ const Deliverables = () => {
     try {
       setLoading(true);
       
+      // Fix: Fetch deliverables and related data separately
       let query = supabase
         .from('deliverables')
-        .select(`
-          *,
-          clients!inner(name),
-          assigned_user:profiles!deliverables_assigned_to_fkey(first_name, last_name)
-        `);
+        .select('*');
 
       // Apply filters based on user role and view mode
       if (profile?.user_group === 'accounting_firm') {
@@ -75,7 +72,7 @@ const Deliverables = () => {
 
       query = query.order('due_date', { ascending: true });
 
-      const { data, error } = await query;
+      const { data: deliverablesData, error } = await query;
 
       if (error) {
         console.error('Error fetching deliverables:', error);
@@ -83,7 +80,28 @@ const Deliverables = () => {
         return;
       }
 
-      setDeliverables(data || []);
+      // Fetch client names separately
+      const clientIds = [...new Set(deliverablesData?.map(d => d.client_id).filter(Boolean) || [])];
+      const { data: clients } = await supabase
+        .from('clients')
+        .select('id, name')
+        .in('id', clientIds);
+
+      // Fetch assigned user names separately
+      const assignedIds = [...new Set(deliverablesData?.map(d => d.assigned_to).filter(Boolean) || [])];
+      const { data: assignedUsers } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name')
+        .in('id', assignedIds);
+
+      // Combine data
+      const enrichedDeliverables = deliverablesData?.map(deliverable => ({
+        ...deliverable,
+        clients: clients?.find(c => c.id === deliverable.client_id),
+        assigned_user: assignedUsers?.find(u => u.id === deliverable.assigned_to)
+      })) || [];
+
+      setDeliverables(enrichedDeliverables);
     } catch (error) {
       console.error('Error fetching deliverables:', error);
       toast.error('Failed to fetch deliverables');

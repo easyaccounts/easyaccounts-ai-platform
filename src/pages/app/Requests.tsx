@@ -53,13 +53,10 @@ const Requests = () => {
     try {
       setLoading(true);
       
+      // Fix: Fetch requests and related data separately
       let query = supabase
         .from('requests')
-        .select(`
-          *,
-          clients!inner(name),
-          assigned_user:profiles!requests_assigned_to_fkey(first_name, last_name)
-        `);
+        .select('*');
 
       // Apply filters based on user role and view mode
       if (profile?.user_group === 'accounting_firm') {
@@ -83,7 +80,7 @@ const Requests = () => {
 
       query = query.order('created_at', { ascending: false });
 
-      const { data, error } = await query;
+      const { data: requestsData, error } = await query;
 
       if (error) {
         console.error('Error fetching requests:', error);
@@ -91,7 +88,28 @@ const Requests = () => {
         return;
       }
 
-      setRequests(data || []);
+      // Fetch client names separately
+      const clientIds = [...new Set(requestsData?.map(r => r.client_id).filter(Boolean) || [])];
+      const { data: clients } = await supabase
+        .from('clients')
+        .select('id, name')
+        .in('id', clientIds);
+
+      // Fetch assigned user names separately
+      const assignedIds = [...new Set(requestsData?.map(r => r.assigned_to).filter(Boolean) || [])];
+      const { data: assignedUsers } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name')
+        .in('id', assignedIds);
+
+      // Combine data
+      const enrichedRequests = requestsData?.map(request => ({
+        ...request,
+        clients: clients?.find(c => c.id === request.client_id),
+        assigned_user: assignedUsers?.find(u => u.id === request.assigned_to)
+      })) || [];
+
+      setRequests(enrichedRequests);
     } catch (error) {
       console.error('Error fetching requests:', error);
       toast.error('Failed to fetch requests');

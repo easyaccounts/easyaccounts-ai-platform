@@ -50,13 +50,10 @@ const Reports = () => {
     try {
       setLoading(true);
       
+      // Fix: Fetch reports and related data separately
       let query = supabase
         .from('reports')
-        .select(`
-          *,
-          clients!inner(name),
-          approved_user:profiles!reports_approved_by_fkey(first_name, last_name)
-        `);
+        .select('*');
 
       // Apply filters based on user role and view mode
       if (profile?.user_group === 'accounting_firm') {
@@ -82,7 +79,7 @@ const Reports = () => {
 
       query = query.order('created_at', { ascending: false });
 
-      const { data, error } = await query;
+      const { data: reportsData, error } = await query;
 
       if (error) {
         console.error('Error fetching reports:', error);
@@ -90,7 +87,28 @@ const Reports = () => {
         return;
       }
 
-      setReports(data || []);
+      // Fetch client names separately
+      const clientIds = [...new Set(reportsData?.map(r => r.client_id).filter(Boolean) || [])];
+      const { data: clients } = await supabase
+        .from('clients')
+        .select('id, name')
+        .in('id', clientIds);
+
+      // Fetch approved user names separately
+      const approvedIds = [...new Set(reportsData?.map(r => r.approved_by).filter(Boolean) || [])];
+      const { data: approvedUsers } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name')
+        .in('id', approvedIds);
+
+      // Combine data
+      const enrichedReports = reportsData?.map(report => ({
+        ...report,
+        clients: clients?.find(c => c.id === report.client_id),
+        approved_user: approvedUsers?.find(u => u.id === report.approved_by)
+      })) || [];
+
+      setReports(enrichedReports);
     } catch (error) {
       console.error('Error fetching reports:', error);
       toast.error('Failed to fetch reports');

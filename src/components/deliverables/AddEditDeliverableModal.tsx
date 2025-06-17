@@ -19,7 +19,14 @@ import { Database } from '@/integrations/supabase/types';
 
 type Deliverable = Database['public']['Tables']['deliverables']['Row'];
 type Client = Database['public']['Tables']['clients']['Row'];
-type Profile = Database['public']['Tables']['profiles']['Row'];
+
+// Fix: Define proper type for team members
+type TeamMember = {
+  id: string;
+  first_name: string;
+  last_name: string;
+  user_role: string;
+};
 
 interface AddEditDeliverableModalProps {
   isOpen: boolean;
@@ -32,7 +39,7 @@ const AddEditDeliverableModal = ({ isOpen, onClose, deliverable, onDeliverableSa
   const { profile } = useAuth();
   const { availableClients } = useClientContext();
   const [loading, setLoading] = useState(false);
-  const [teamMembers, setTeamMembers] = useState<Profile[]>([]);
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [formData, setFormData] = useState({
     title: '',
     client_id: '',

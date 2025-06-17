@@ -19,6 +19,8 @@ import { toast } from 'sonner';
 import { Database } from '@/integrations/supabase/types';
 
 type Request = Database['public']['Tables']['requests']['Row'];
+
+// Fix: Define proper type for message with sender info
 type RequestMessage = Database['public']['Tables']['request_messages']['Row'] & {
   sender?: { first_name: string; last_name: string; user_role: string };
 };
@@ -49,12 +51,10 @@ const RequestDetailsModal = ({ isOpen, onClose, request }: RequestDetailsModalPr
     if (!request) return;
 
     try {
-      const { data, error } = await supabase
+      // Fix: Use proper join syntax
+      const { data: messagesData, error } = await supabase
         .from('request_messages')
-        .select(`
-          *,
-          sender:profiles!request_messages_sender_id_fkey(first_name, last_name, user_role)
-        `)
+        .select('*')
         .eq('request_id', request.id)
         .order('created_at', { ascending: true });
 
@@ -63,7 +63,26 @@ const RequestDetailsModal = ({ isOpen, onClose, request }: RequestDetailsModalPr
         return;
       }
 
-      setMessages(data || []);
+      // Fetch sender profiles separately to avoid foreign key issues
+      const senderIds = messagesData?.map(m => m.sender_id) || [];
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name, user_role')
+        .in('id', senderIds);
+
+      if (profilesError) {
+        console.error('Error fetching profiles:', profilesError);
+        setMessages(messagesData || []);
+        return;
+      }
+
+      // Combine messages with sender data
+      const messagesWithSenders = messagesData?.map(message => ({
+        ...message,
+        sender: profiles?.find(p => p.id === message.sender_id)
+      })) || [];
+
+      setMessages(messagesWithSenders);
     } catch (error) {
       console.error('Error fetching messages:', error);
     }
