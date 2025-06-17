@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link, useLocation, Outlet } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -73,8 +72,8 @@ const AppLayout = () => {
       return baseItems;
     }
 
-    // Chartered Accountant Group - view mode dependent
-    if (userGroup === 'chartered_accountant') {
+    // Accounting Firm Group (Chartered Accountant) - view mode dependent
+    if (userGroup === 'accounting_firm') {
       if (viewMode === 'firm') {
         // Firm View Navigation
         const firmItems = [
@@ -145,7 +144,7 @@ const AppLayout = () => {
   };
 
   const shouldShowViewBanner = () => {
-    return profile?.user_group === 'chartered_accountant' && viewMode === 'client' && selectedClient;
+    return profile?.user_group === 'accounting_firm' && viewMode === 'client' && selectedClient;
   };
 
   return (

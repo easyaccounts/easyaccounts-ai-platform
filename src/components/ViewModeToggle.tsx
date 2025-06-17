@@ -19,8 +19,8 @@ interface ViewModeToggleProps {
 const ViewModeToggle = ({ userRole, userGroup }: ViewModeToggleProps) => {
   const { viewMode, setViewMode, loading } = useSessionContext();
 
-  // Only show toggle for chartered accountant users
-  if (userGroup !== 'chartered_accountant') {
+  // Only show toggle for accounting firm users (chartered accountants)
+  if (userGroup !== 'accounting_firm') {
     return null;
   }
 

@@ -1,5 +1,5 @@
 
-export type UserGroup = 'chartered_accountant' | 'business_owner';
+export type UserGroup = 'accounting_firm' | 'business_owner';
 
 export type UserRole = 'partner' | 'senior' | 'staff' | 'client' | 'management' | 'accounting_team';
 

@@ -1,4 +1,3 @@
-
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -22,7 +21,7 @@ export const SessionContextProvider = ({ children }: { children: ReactNode }) =>
       if (profile.user_group === 'business_owner') {
         setViewModeState('firm');
         setLoading(false);
-      } else if (profile.user_group === 'chartered_accountant') {
+      } else if (profile.user_group === 'accounting_firm') {
         fetchViewMode();
       } else {
         setLoading(false);
@@ -53,8 +52,8 @@ export const SessionContextProvider = ({ children }: { children: ReactNode }) =>
   };
 
   const setViewMode = async (mode: 'firm' | 'client') => {
-    // Only allow chartered accountant users to change view mode
-    if (profile?.user_group !== 'chartered_accountant') {
+    // Only allow accounting firm users to change view mode
+    if (profile?.user_group !== 'accounting_firm') {
       return;
     }
 
