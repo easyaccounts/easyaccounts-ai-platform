@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link, useLocation, Outlet } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -30,9 +29,12 @@ import {
   LogOut,
   Home
 } from 'lucide-react';
+import ViewModeToggle from './ViewModeToggle';
+import { useSessionContext } from '@/hooks/useSessionContext';
 
 const AppLayout = () => {
   const { profile, signOut } = useAuth();
+  const { viewMode } = useSessionContext();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -49,18 +51,31 @@ const AppLayout = () => {
     { name: 'Chart of Accounts', href: '/app/accounts', icon: BarChart3 },
   ];
 
-  // Filter navigation items based on user role
+  // Filter navigation items based on user role and view mode
   const getNavigationItems = () => {
     let filteredItems = [...allNavigationItems];
+    const userRole = profile?.user_role;
+    const userGroup = profile?.user_group;
 
-    // For partners, only show specific items
-    if (profile?.user_role === 'partner') {
-      const allowedItems = ['Dashboard', 'Clients', 'Invoices', 'Deliverables', 'Requests', 'Reports'];
-      filteredItems = allNavigationItems.filter(item => allowedItems.includes(item.name));
+    if (viewMode === 'firm') {
+      // Firm view navigation
+      if (userRole === 'partner') {
+        const allowedItems = ['Dashboard', 'Clients', 'Invoices', 'Deliverables', 'Requests', 'Reports'];
+        filteredItems = allNavigationItems.filter(item => allowedItems.includes(item.name));
+      } else if (userRole === 'senior_staff' || userRole === 'staff') {
+        const allowedItems = ['Dashboard', 'Deliverables', 'Requests', 'Magic Upload'];
+        filteredItems = allNavigationItems.filter(item => allowedItems.includes(item.name));
+      }
+    } else {
+      // Client view navigation
+      if (userRole === 'client' || userRole === 'partner') {
+        const allowedItems = ['Dashboard', 'Transactions', 'Invoices', 'Requests', 'Reports'];
+        filteredItems = allNavigationItems.filter(item => allowedItems.includes(item.name));
+      }
     }
 
-    // Add team management for partners and management only
-    if (profile?.user_role === 'partner' || profile?.user_role === 'management') {
+    // Add team management for partners and management only (firm view only)
+    if (viewMode === 'firm' && (userRole === 'partner' || userRole === 'management')) {
       filteredItems.push({ name: 'Team', href: '/app/team', icon: UserPlus });
     }
 
@@ -162,6 +177,8 @@ const AppLayout = () => {
             </div>
 
             <div className="flex items-center space-x-4">
+              <ViewModeToggle userRole={profile?.user_role} />
+              
               <div className="hidden md:flex items-center space-x-2">
                 <Badge variant="secondary">{profile?.user_role}</Badge>
                 <Badge variant="outline">

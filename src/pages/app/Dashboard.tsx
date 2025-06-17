@@ -1,70 +1,26 @@
 
-import React, { useEffect, useState } from 'react';
-import { getCurrentUser } from '@/lib/getCurrentUser';
-import { Database } from '@/integrations/supabase/types';
+import React from 'react';
+import { useAuth } from '@/hooks/useAuth';
+import { useSessionContext } from '@/hooks/useSessionContext';
 import DashboardRenderer from '@/components/dashboard/DashboardRenderer';
-import LoadingSkeleton from '@/components/dashboard/LoadingSkeleton';
-
-type Profile = Database['public']['Tables']['profiles']['Row'];
 
 const Dashboard = () => {
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { profile } = useAuth();
+  const { viewMode } = useSessionContext();
 
-  useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        
-        const { user, profile: userProfile, error: fetchError } = await getCurrentUser();
-        
-        if (fetchError) {
-          setError(fetchError);
-          console.error('Dashboard: Error fetching user data:', fetchError);
-          return;
-        }
-
-        if (!user) {
-          setError('No authenticated user found');
-          return;
-        }
-
-        if (!userProfile) {
-          setError('User profile not found. Please complete your profile setup.');
-          return;
-        }
-
-        setProfile(userProfile);
-        console.log('Dashboard: Successfully loaded profile for:', userProfile.email);
-        
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
-        setError(errorMessage);
-        console.error('Dashboard: Unexpected error:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUserData();
-  }, []);
-
-  // Show loading skeleton based on detected role
-  if (loading) {
-    return <LoadingSkeleton role={profile?.user_role || 'default'} />;
+  if (!profile) {
+    return <div>Loading...</div>;
   }
 
-  return (
-    <div className="space-y-6">
-      <DashboardRenderer 
-        profile={profile} 
-        loading={loading} 
-        error={error} 
-      />
-    </div>
-  );
+  // Determine dashboard type based on view mode and user role
+  let dashboardType = profile.user_role;
+  
+  // Override dashboard type for client view
+  if (viewMode === 'client' && (profile.user_role === 'partner' || profile.user_role === 'management')) {
+    dashboardType = 'client';
+  }
+
+  return <DashboardRenderer userRole={dashboardType} />;
 };
 
 export default Dashboard;

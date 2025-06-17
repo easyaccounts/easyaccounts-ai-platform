@@ -487,6 +487,8 @@ export type Database = {
           first_name: string | null
           id: string
           last_name: string | null
+          phone: string | null
+          status: string | null
           updated_at: string
           user_group: Database["public"]["Enums"]["user_group"]
           user_role: Database["public"]["Enums"]["user_role"]
@@ -501,6 +503,8 @@ export type Database = {
           first_name?: string | null
           id: string
           last_name?: string | null
+          phone?: string | null
+          status?: string | null
           updated_at?: string
           user_group: Database["public"]["Enums"]["user_group"]
           user_role: Database["public"]["Enums"]["user_role"]
@@ -515,6 +519,8 @@ export type Database = {
           first_name?: string | null
           id?: string
           last_name?: string | null
+          phone?: string | null
+          status?: string | null
           updated_at?: string
           user_group?: Database["public"]["Enums"]["user_group"]
           user_role?: Database["public"]["Enums"]["user_role"]
@@ -667,6 +673,59 @@ export type Database = {
           },
         ]
       }
+      user_assignments: {
+        Row: {
+          assigned_by: string
+          client_id: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          assigned_by: string
+          client_id: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          assigned_by?: string
+          client_id?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_assignments_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_sessions: {
+        Row: {
+          id: string
+          updated_at: string
+          user_id: string
+          view_mode: string | null
+        }
+        Insert: {
+          id?: string
+          updated_at?: string
+          user_id: string
+          view_mode?: string | null
+        }
+        Update: {
+          id?: string
+          updated_at?: string
+          user_id?: string
+          view_mode?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -687,6 +746,14 @@ export type Database = {
       get_current_user_role: {
         Args: Record<PropertyKey, never>
         Returns: Database["public"]["Enums"]["user_role"]
+      }
+      get_current_user_view_mode: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      set_user_view_mode: {
+        Args: { new_mode: string }
+        Returns: undefined
       }
     }
     Enums: {
