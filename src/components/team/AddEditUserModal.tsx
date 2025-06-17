@@ -1,63 +1,50 @@
 
 import React, { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { toast } from 'sonner';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { Database } from '@/integrations/supabase/types';
 
-interface Client {
-  id: string;
-  name: string;
+type Profile = Database['public']['Tables']['profiles']['Row'];
+type Client = Database['public']['Tables']['clients']['Row'];
+
+interface AddEditUserModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  user?: Profile | null;
+  onUserUpdated: () => void;
 }
 
-interface TeamMember {
-  id: string;
+interface FormData {
   first_name: string;
   last_name: string;
   email: string;
   phone: string;
-  user_role: string;
-  status: string;
+  user_role: 'senior_staff' | 'staff';
+  status: 'active' | 'inactive';
 }
 
-interface AddEditUserModalProps {
-  open: boolean;
-  onClose: () => void;
-  user?: TeamMember | null;
-  firmId?: string;
-}
-
-const AddEditUserModal = ({ open, onClose, user, firmId }: AddEditUserModalProps) => {
-  const [formData, setFormData] = useState({
+const AddEditUserModal = ({ isOpen, onClose, user, onUserUpdated }: AddEditUserModalProps) => {
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState<FormData>({
     first_name: '',
     last_name: '',
     email: '',
     phone: '',
-    user_role: 'staff' as const,
-    status: 'active' as const,
+    user_role: 'staff',
+    status: 'active',
   });
   const [clients, setClients] = useState<Client[]>([]);
   const [selectedClients, setSelectedClients] = useState<string[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [loadingClients, setLoadingClients] = useState(false);
 
   useEffect(() => {
-    if (open) {
+    if (isOpen) {
       fetchClients();
       if (user) {
         setFormData({
@@ -65,15 +52,15 @@ const AddEditUserModal = ({ open, onClose, user, firmId }: AddEditUserModalProps
           last_name: user.last_name || '',
           email: user.email || '',
           phone: user.phone || '',
-          user_role: user.user_role as 'staff' | 'senior_staff',
-          status: user.status as 'active' | 'inactive',
+          user_role: (user.user_role as 'senior_staff' | 'staff') || 'staff',
+          status: (user.status as 'active' | 'inactive') || 'active',
         });
         fetchUserAssignments(user.id);
       } else {
         resetForm();
       }
     }
-  }, [open, user]);
+  }, [isOpen, user]);
 
   const resetForm = () => {
     setFormData({
@@ -88,149 +75,160 @@ const AddEditUserModal = ({ open, onClose, user, firmId }: AddEditUserModalProps
   };
 
   const fetchClients = async () => {
-    try {
-      setLoadingClients(true);
-      const { data, error } = await supabase
-        .from('clients')
-        .select('id, name')
-        .eq('firm_id', firmId)
-        .order('name');
+    const { data, error } = await supabase
+      .from('clients')
+      .select('*')
+      .order('name');
 
-      if (error) {
-        console.error('Error fetching clients:', error);
-        return;
-      }
-
-      setClients(data || []);
-    } catch (error) {
+    if (error) {
       console.error('Error fetching clients:', error);
-    } finally {
-      setLoadingClients(false);
+    } else {
+      setClients(data || []);
     }
   };
 
   const fetchUserAssignments = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('user_assignments')
-        .select('client_id')
-        .eq('user_id', userId);
+    const { data, error } = await supabase
+      .from('user_assignments')
+      .select('client_id')
+      .eq('user_id', userId);
 
-      if (error) {
-        console.error('Error fetching user assignments:', error);
-        return;
-      }
-
-      setSelectedClients(data?.map(a => a.client_id) || []);
-    } catch (error) {
+    if (error) {
       console.error('Error fetching user assignments:', error);
+    } else {
+      setSelectedClients(data?.map(assignment => assignment.client_id) || []);
     }
   };
 
-  const handleInputChange = (field: string, value: string) => {
+  const handleInputChange = (field: keyof FormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleClientToggle = (clientId: string) => {
-    setSelectedClients(prev => 
-      prev.includes(clientId)
-        ? prev.filter(id => id !== clientId)
-        : [...prev, clientId]
-    );
+  const handleClientToggle = (clientId: string, checked: boolean) => {
+    if (checked) {
+      setSelectedClients(prev => [...prev, clientId]);
+    } else {
+      setSelectedClients(prev => prev.filter(id => id !== clientId));
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!formData.first_name || !formData.last_name || !formData.email) {
-      toast.error('Please fill in all required fields');
-      return;
-    }
-
     setLoading(true);
 
     try {
       if (user) {
         // Update existing user
-        const { error: updateError } = await supabase
+        const { error } = await supabase
           .from('profiles')
           .update({
             first_name: formData.first_name,
             last_name: formData.last_name,
+            email: formData.email,
             phone: formData.phone,
             user_role: formData.user_role,
             status: formData.status,
           })
           .eq('id', user.id);
 
-        if (updateError) {
-          console.error('Error updating user:', updateError);
-          toast.error('Failed to update user');
-          return;
+        if (error) throw error;
+
+        await updateUserAssignments(user.id);
+
+        toast({
+          title: 'Success',
+          description: 'User updated successfully.',
+        });
+      } else {
+        // Create new user
+        const { data: authData, error: authError } = await supabase.auth.signUp({
+          email: formData.email,
+          password: 'TempPassword123!', // Temporary password
+          options: {
+            data: {
+              first_name: formData.first_name,
+              last_name: formData.last_name,
+              user_role: formData.user_role,
+              user_group: 'accounting_firm',
+            }
+          }
+        });
+
+        if (authError) throw authError;
+
+        if (authData.user) {
+          // Update profile with additional fields
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .update({
+              phone: formData.phone,
+              status: formData.status,
+            })
+            .eq('id', authData.user.id);
+
+          if (profileError) throw profileError;
+
+          await updateUserAssignments(authData.user.id);
         }
 
-        // Update client assignments
-        await updateUserAssignments(user.id);
-        
-        toast.success('User updated successfully');
-      } else {
-        // Create new user via auth.admin.createUser would require service role
-        // For now, we'll just show a message that they need to sign up
-        toast.info('New users need to sign up themselves. Share the signup link with them.');
+        toast({
+          title: 'Success',
+          description: 'User created successfully. They will receive an email to set their password.',
+        });
       }
 
+      onUserUpdated();
       onClose();
+      resetForm();
     } catch (error) {
       console.error('Error saving user:', error);
-      toast.error('Failed to save user');
+      toast({
+        title: 'Error',
+        description: 'Failed to save user. Please try again.',
+        variant: 'destructive',
+      });
     } finally {
       setLoading(false);
     }
   };
 
   const updateUserAssignments = async (userId: string) => {
-    try {
-      // Delete existing assignments
-      await supabase
+    // Delete existing assignments
+    const { error: deleteError } = await supabase
+      .from('user_assignments')
+      .delete()
+      .eq('user_id', userId);
+
+    if (deleteError) throw deleteError;
+
+    // Insert new assignments
+    if (selectedClients.length > 0) {
+      const currentUser = await supabase.auth.getUser();
+      const assignments = selectedClients.map(clientId => ({
+        user_id: userId,
+        client_id: clientId,
+        assigned_by: currentUser.data.user?.id,
+      }));
+
+      const { error } = await supabase
         .from('user_assignments')
-        .delete()
-        .eq('user_id', userId);
+        .insert(assignments);
 
-      // Insert new assignments
-      if (selectedClients.length > 0) {
-        const currentUser = await supabase.auth.getUser();
-        const assignments = selectedClients.map(clientId => ({
-          user_id: userId,
-          client_id: clientId,
-          assigned_by: currentUser.data.user?.id,
-        }));
-
-        const { error } = await supabase
-          .from('user_assignments')
-          .insert(assignments);
-
-        if (error) {
-          console.error('Error updating assignments:', error);
-        }
-      }
-    } catch (error) {
-      console.error('Error updating assignments:', error);
+      if (error) throw error;
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl">
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>
-            {user ? 'Edit Team Member' : 'Add Team Member'}
-          </DialogTitle>
+          <DialogTitle>{user ? 'Edit User' : 'Add New User'}</DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="first_name">First Name *</Label>
+              <Label htmlFor="first_name">First Name</Label>
               <Input
                 id="first_name"
                 value={formData.first_name}
@@ -239,7 +237,7 @@ const AddEditUserModal = ({ open, onClose, user, firmId }: AddEditUserModalProps
               />
             </div>
             <div>
-              <Label htmlFor="last_name">Last Name *</Label>
+              <Label htmlFor="last_name">Last Name</Label>
               <Input
                 id="last_name"
                 value={formData.last_name}
@@ -249,25 +247,26 @@ const AddEditUserModal = ({ open, onClose, user, firmId }: AddEditUserModalProps
             </div>
           </div>
 
-          <div>
-            <Label htmlFor="email">Email *</Label>
-            <Input
-              id="email"
-              type="email"
-              value={formData.email}
-              onChange={(e) => handleInputChange('email', e.target.value)}
-              required
-              disabled={!!user} // Don't allow email changes for existing users
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="phone">Phone</Label>
-            <Input
-              id="phone"
-              value={formData.phone}
-              onChange={(e) => handleInputChange('phone', e.target.value)}
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                value={formData.email}
+                onChange={(e) => handleInputChange('email', e.target.value)}
+                required
+                disabled={!!user} // Cannot change email for existing users
+              />
+            </div>
+            <div>
+              <Label htmlFor="phone">Phone</Label>
+              <Input
+                id="phone"
+                value={formData.phone}
+                onChange={(e) => handleInputChange('phone', e.target.value)}
+              />
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -299,36 +298,28 @@ const AddEditUserModal = ({ open, onClose, user, firmId }: AddEditUserModalProps
 
           <div>
             <Label>Assigned Clients</Label>
-            <div className="border rounded-md p-4 max-h-40 overflow-y-auto">
-              {loadingClients ? (
-                <p className="text-sm text-muted-foreground">Loading clients...</p>
-              ) : clients.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No clients available</p>
-              ) : (
-                <div className="space-y-2">
-                  {clients.map((client) => (
-                    <div key={client.id} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={client.id}
-                        checked={selectedClients.includes(client.id)}
-                        onCheckedChange={() => handleClientToggle(client.id)}
-                      />
-                      <Label htmlFor={client.id} className="text-sm">
-                        {client.name}
-                      </Label>
-                    </div>
-                  ))}
+            <div className="mt-2 max-h-48 overflow-y-auto border rounded-md p-3 space-y-2">
+              {clients.map((client) => (
+                <div key={client.id} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={client.id}
+                    checked={selectedClients.includes(client.id)}
+                    onCheckedChange={(checked) => handleClientToggle(client.id, checked as boolean)}
+                  />
+                  <Label htmlFor={client.id} className="text-sm font-normal">
+                    {client.name}
+                  </Label>
                 </div>
-              )}
+              ))}
             </div>
           </div>
 
-          <div className="flex justify-end space-x-2 pt-4">
+          <div className="flex justify-end space-x-2">
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel
             </Button>
             <Button type="submit" disabled={loading}>
-              {loading ? 'Saving...' : user ? 'Update User' : 'Add User'}
+              {loading ? 'Saving...' : user ? 'Update User' : 'Create User'}
             </Button>
           </div>
         </form>

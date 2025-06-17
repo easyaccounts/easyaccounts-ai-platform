@@ -6,6 +6,7 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { Toaster } from '@/components/ui/sonner';
 import { AuthProvider } from '@/hooks/useAuth';
 import { SessionContextProvider } from '@/hooks/useSessionContext';
+import { ClientContextProvider } from '@/hooks/useClientContext';
 
 // Lazy load components
 const Index = lazy(() => import('@/pages/Index'));
@@ -23,26 +24,28 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <SessionContextProvider>
-          <Toaster />
-          <TooltipProvider>
-            <Router>
-              <Suspense fallback={<div>Loading...</div>}>
-                <Routes>
-                  <Route path="/" element={<Index />} />
-                  <Route path="/auth" element={<Auth />} />
-                  <Route path="/app" element={
-                    <ProtectedRoute>
-                      <AppLayout />
-                    </ProtectedRoute>
-                  }>
-                    <Route index element={<Dashboard />} />
-                    <Route path="team" element={<TeamManagement />} />
-                  </Route>
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </Suspense>
-            </Router>
-          </TooltipProvider>
+          <ClientContextProvider>
+            <Toaster />
+            <TooltipProvider>
+              <Router>
+                <Suspense fallback={<div>Loading...</div>}>
+                  <Routes>
+                    <Route path="/" element={<Index />} />
+                    <Route path="/auth" element={<Auth />} />
+                    <Route path="/app" element={
+                      <ProtectedRoute>
+                        <AppLayout />
+                      </ProtectedRoute>
+                    }>
+                      <Route index element={<Dashboard />} />
+                      <Route path="team" element={<TeamManagement />} />
+                    </Route>
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </Suspense>
+              </Router>
+            </TooltipProvider>
+          </ClientContextProvider>
         </SessionContextProvider>
       </AuthProvider>
     </QueryClientProvider>
