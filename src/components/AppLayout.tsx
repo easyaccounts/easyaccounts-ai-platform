@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Link, useLocation, Outlet } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -138,7 +139,7 @@ const AppLayout = () => {
   };
 
   const getUserGroupLabel = () => {
-    if (profile?.user_group === 'chartered_accountant') return 'CA Firm';
+    if (profile?.user_group === 'accounting_firm') return 'CA Firm';
     if (profile?.user_group === 'business_owner') return 'Business';
     return profile?.user_group;
   };
