@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useTeamManager } from '@/hooks/useTeamManager';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,9 +14,11 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Plus, Edit, Trash2, UserPlus } from 'lucide-react';
 import AddEditUserModal from '@/components/team/AddEditUserModal';
+import { useAuth } from '@/hooks/useAuth';
 
 const TeamManagement = () => {
-  const { teamMembers, isLoading, refreshTeamMembers } = useTeamManager();
+  const { teamMembers, clients, isLoading, refreshTeamMembers, createTeamMember, updateTeamMember, isCreating, isUpdating } = useTeamManager();
+  const { profile } = useAuth();
   const [modalOpen, setModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
 
@@ -37,6 +40,14 @@ const TeamManagement = () => {
   const handleUserUpdated = () => {
     refreshTeamMembers();
     handleModalClose();
+  };
+
+  const handleSaveUser = async (data: any) => {
+    if (editingUser) {
+      await updateTeamMember({ ...data, id: editingUser.id });
+    } else {
+      await createTeamMember({ ...data, firm_id: profile?.firm_id });
+    }
   };
 
   const getRoleColor = (role: string) => {
@@ -135,6 +146,10 @@ const TeamManagement = () => {
         onClose={handleModalClose}
         user={editingUser}
         onUserUpdated={handleUserUpdated}
+        firmId={profile?.firm_id || null}
+        clients={clients}
+        onSubmit={handleSaveUser}
+        isSubmitting={isCreating || isUpdating}
       />
     </div>
   );

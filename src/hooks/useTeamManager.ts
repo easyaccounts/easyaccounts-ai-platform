@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -24,7 +23,7 @@ interface ClientAssignment {
   client_id: string;
   team_member_id: string;
   clients: { name: string };
-  profiles: { first_name: string; last_name: string };
+  profiles: { first_name: string; last_name: string; user_role: string };
 }
 
 interface CreateTeamMemberData {
@@ -91,7 +90,7 @@ export const useTeamManager = () => {
         .select(`
           *,
           clients(name),
-          profiles!team_client_assignments_team_member_id_fkey(first_name, last_name)
+          profiles!team_client_assignments_team_member_id_fkey(first_name, last_name, user_role)
         `)
         .order('created_at', { ascending: false });
       
