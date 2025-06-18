@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -135,12 +134,13 @@ const AddEditUserModal = ({ isOpen, onClose, user, onUserUpdated }: AddEditUserM
         const { error } = await supabase
           .from('profiles')
           .insert([{
+            id: crypto.randomUUID(),
             email: formData.email,
             first_name: formData.first_name,
             last_name: formData.last_name,
             phone: formData.phone,
             user_role: formData.user_role,
-            user_group: 'accounting_firm',
+            user_group: 'accounting_firm' as const,
             firm_id: profile?.firm_id,
             status: 'pending',
           }]);

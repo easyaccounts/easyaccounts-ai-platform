@@ -22,7 +22,7 @@ const InviteTeamMemberModal = ({ isOpen, onClose }: InviteTeamMemberModalProps) 
     first_name: '',
     last_name: '',
     email: '',
-    user_role: 'client',
+    user_role: 'client' as 'client' | 'management',
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -34,11 +34,12 @@ const InviteTeamMemberModal = ({ isOpen, onClose }: InviteTeamMemberModalProps) 
       const { error: insertError } = await supabase
         .from('profiles')
         .insert([{
+          id: crypto.randomUUID(),
           email: formData.email,
           first_name: formData.first_name,
           last_name: formData.last_name,
           user_role: formData.user_role,
-          user_group: 'business_owner',
+          user_group: 'business_owner' as const,
           business_id: profile?.business_id,
           status: 'pending',
         }]);
@@ -106,7 +107,7 @@ const InviteTeamMemberModal = ({ isOpen, onClose }: InviteTeamMemberModalProps) 
 
           <div>
             <Label htmlFor="user_role">Role *</Label>
-            <Select value={formData.user_role} onValueChange={(value) => setFormData(prev => ({ ...prev, user_role: value }))}>
+            <Select value={formData.user_role} onValueChange={(value: 'client' | 'management') => setFormData(prev => ({ ...prev, user_role: value }))}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
