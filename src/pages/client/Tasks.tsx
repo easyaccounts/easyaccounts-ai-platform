@@ -3,62 +3,73 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { CheckSquare, Clock, Calendar } from 'lucide-react';
-import { useClientTaskManager } from '@/hooks/useClientTaskManager';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 
 const ClientTasks = () => {
-  const { tasks, isLoading } = useClientTaskManager();
+  const { profile } = useAuth();
+
+  const { data: tasks = [], isLoading } = useQuery({
+    queryKey: ['client-tasks', profile?.business_id],
+    queryFn: async () => {
+      if (!profile?.business_id) return [];
+      
+      const { data, error } = await supabase
+        .from('deliverable_tasks')
+        .select(`
+          *,
+          deliverables!inner(client_id)
+        `)
+        .eq('deliverables.client_id', profile.business_id)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!profile?.business_id,
+  });
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'pending': return 'destructive';
+      case 'pending': return 'secondary';
       case 'in_progress': return 'default';
-      case 'completed': return 'default';
-      default: return 'secondary';
+      case 'completed': return 'outline';
+      default: return 'outline';
     }
   };
 
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return 'No due date';
-    return new Date(dateString).toLocaleDateString();
-  };
-
   return (
-    <div className="p-6 space-y-6">
+    <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">My Tasks</h1>
+          <h1 className="text-3xl font-bold">Tasks</h1>
           <p className="text-muted-foreground">
-            View tasks assigned to your business
+            View tasks assigned to your business by your accounting team
           </p>
         </div>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center">
-            <CheckSquare className="w-5 h-5 mr-2" />
-            Your Tasks
-          </CardTitle>
-          <CardDescription>
-            Tasks assigned to your business by your accounting team
-          </CardDescription>
+          <CardTitle>Assigned Tasks</CardTitle>
+          <CardDescription>Tasks that require your attention or input</CardDescription>
         </CardHeader>
         <CardContent>
           {isLoading ? (
             <div className="text-center py-8">Loading tasks...</div>
           ) : tasks.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              No tasks assigned to you at the moment.
+            <div className="text-center py-8 text-muted-foreground">
+              No tasks assigned at the moment.
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Task</TableHead>
-                  <TableHead>Deliverable</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Due Date</TableHead>
+                  <TableHead>Created</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -67,15 +78,10 @@ const ClientTasks = () => {
                     <TableCell>
                       <div>
                         <div className="font-medium">{task.title}</div>
-                        {task.description && (
-                          <div className="text-sm text-muted-foreground">
-                            {task.description}
-                          </div>
-                        )}
+                        <div className="text-sm text-muted-foreground">
+                          {task.description?.substring(0, 60)}...
+                        </div>
                       </div>
-                    </TableCell>
-                    <TableCell>
-                      {task.deliverables?.title || 'N/A'}
                     </TableCell>
                     <TableCell>
                       <Badge variant={getStatusColor(task.status)}>
@@ -83,10 +89,10 @@ const ClientTasks = () => {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-1">
-                        <Calendar className="w-3 h-3 text-muted-foreground" />
-                        {formatDate(task.due_date)}
-                      </div>
+                      {task.due_date ? new Date(task.due_date).toLocaleDateString() : 'No due date'}
+                    </TableCell>
+                    <TableCell>
+                      {new Date(task.created_at).toLocaleDateString()}
                     </TableCell>
                   </TableRow>
                 ))}

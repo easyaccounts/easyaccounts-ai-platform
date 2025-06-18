@@ -1,42 +1,50 @@
 
 import React, { useState } from 'react';
+import { useParams } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Plus, MessageSquare } from 'lucide-react';
+import { Plus, Eye } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
-import CreateRequestModal from '@/components/client/CreateRequestModal';
+import CreateDeliverableModal from '@/components/deliverables/CreateDeliverableModal';
 
-const ClientRequests = () => {
-  const { profile } = useAuth();
+const ClientDeliverables = () => {
+  const { clientId } = useParams();
   const [modalOpen, setModalOpen] = useState(false);
 
-  const { data: requests = [], isLoading, refetch } = useQuery({
-    queryKey: ['client-requests', profile?.business_id],
+  const { data: deliverables = [], isLoading, refetch } = useQuery({
+    queryKey: ['client-deliverables', clientId],
     queryFn: async () => {
-      if (!profile?.business_id) return [];
+      if (!clientId) return [];
       
       const { data, error } = await supabase
-        .from('requests')
+        .from('deliverables')
         .select('*')
-        .eq('business_id', profile.business_id)
+        .eq('client_id', clientId)
         .order('created_at', { ascending: false });
       
       if (error) throw error;
       return data;
     },
-    enabled: !!profile?.business_id,
+    enabled: !!clientId,
   });
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'open': return 'default';
-      case 'in_progress': return 'secondary';
+      case 'pending': return 'secondary';
+      case 'in_progress': return 'default';
       case 'completed': return 'outline';
-      case 'closed': return 'destructive';
+      default: return 'outline';
+    }
+  };
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'high': return 'destructive';
+      case 'medium': return 'default';
+      case 'low': return 'secondary';
       default: return 'outline';
     }
   };
@@ -47,31 +55,31 @@ const ClientRequests = () => {
   };
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="p-6 space-y-6">
+      <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">Requests</h1>
+          <h1 className="text-2xl font-bold">Client Deliverables</h1>
           <p className="text-muted-foreground">
-            Create and track requests to your accounting team
+            Manage deliverables for this client
           </p>
         </div>
         <Button onClick={() => setModalOpen(true)}>
           <Plus className="w-4 h-4 mr-2" />
-          New Request
+          New Deliverable
         </Button>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Your Requests</CardTitle>
-          <CardDescription>All requests you've submitted to your accounting team</CardDescription>
+          <CardTitle>Deliverables</CardTitle>
+          <CardDescription>All deliverables for this client</CardDescription>
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="text-center py-8">Loading requests...</div>
-          ) : requests.length === 0 ? (
+            <div className="text-center py-8">Loading deliverables...</div>
+          ) : deliverables.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              No requests found. Create your first request to get started.
+              No deliverables found. Create the first deliverable to get started.
             </div>
           ) : (
             <Table>
@@ -81,38 +89,42 @@ const ClientRequests = () => {
                   <TableHead>Type</TableHead>
                   <TableHead>Priority</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Due Date</TableHead>
                   <TableHead>Created</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {requests.map((request) => (
-                  <TableRow key={request.id}>
+                {deliverables.map((deliverable) => (
+                  <TableRow key={deliverable.id}>
                     <TableCell>
                       <div>
-                        <div className="font-medium">{request.title}</div>
+                        <div className="font-medium">{deliverable.title}</div>
                         <div className="text-sm text-muted-foreground">
-                          {request.description?.substring(0, 60)}...
+                          {deliverable.description?.substring(0, 60)}...
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell>{request.request_type}</TableCell>
+                    <TableCell>{deliverable.deliverable_type}</TableCell>
                     <TableCell>
-                      <Badge variant={request.priority === 'high' ? 'destructive' : 'outline'}>
-                        {request.priority}
+                      <Badge variant={getPriorityColor(deliverable.priority)}>
+                        {deliverable.priority}
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={getStatusColor(request.status)}>
-                        {request.status.replace('_', ' ')}
+                      <Badge variant={getStatusColor(deliverable.status)}>
+                        {deliverable.status.replace('_', ' ')}
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      {new Date(request.created_at).toLocaleDateString()}
+                      {deliverable.due_date ? new Date(deliverable.due_date).toLocaleDateString() : 'No due date'}
+                    </TableCell>
+                    <TableCell>
+                      {new Date(deliverable.created_at).toLocaleDateString()}
                     </TableCell>
                     <TableCell>
                       <Button variant="ghost" size="sm">
-                        <MessageSquare className="w-4 h-4" />
+                        <Eye className="w-4 h-4" />
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -123,7 +135,7 @@ const ClientRequests = () => {
         </CardContent>
       </Card>
 
-      <CreateRequestModal
+      <CreateDeliverableModal
         isOpen={modalOpen}
         onClose={handleModalClose}
       />
@@ -131,4 +143,4 @@ const ClientRequests = () => {
   );
 };
 
-export default ClientRequests;
+export default ClientDeliverables;

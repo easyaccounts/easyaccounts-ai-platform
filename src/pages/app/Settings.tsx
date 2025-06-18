@@ -1,288 +1,324 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Settings as SettingsIcon, Upload, Users, FileText, Palette } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Settings as SettingsIcon, Save, Building, Upload, User } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
-const Settings = () => {
-  const { toast } = useToast();
-  const [firmName, setFirmName] = useState('');
-  const [defaultBillingRate, setDefaultBillingRate] = useState('');
-  const [autoAssignDeliverables, setAutoAssignDeliverables] = useState(false);
-  const [aiCategorization, setAiCategorization] = useState(true);
+const AppSettings = () => {
+  const { profile } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
+  const [logoUrl, setLogoUrl] = useState<string>('');
+  const [profileData, setProfileData] = useState({
+    first_name: '',
+    last_name: '',
+    email: '',
+    phone: ''
+  });
+  const [firmData, setFirmData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    address: '',
+    city: '',
+    state: '',
+    postal_code: '',
+    country: ''
+  });
 
-  const handleSaveGeneral = () => {
-    toast({
-      title: "Settings Updated",
-      description: "General settings have been saved successfully.",
-    });
+  useEffect(() => {
+    if (profile) {
+      setProfileData({
+        first_name: profile.first_name || '',
+        last_name: profile.last_name || '',
+        email: profile.email || '',
+        phone: profile.phone || ''
+      });
+      fetchFirmData();
+    }
+  }, [profile]);
+
+  const fetchFirmData = async () => {
+    if (!profile?.firm_id) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('firms')
+        .select('*')
+        .eq('id', profile.firm_id)
+        .single();
+
+      if (error) throw error;
+
+      if (data) {
+        setFirmData({
+          name: data.name || '',
+          email: data.email || '',
+          phone: data.phone || '',
+          address: data.address || '',
+          city: data.city || '',
+          state: data.state || '',
+          postal_code: data.postal_code || '',
+          country: data.country || ''
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching firm data:', error);
+    }
   };
 
-  const handleSaveTemplates = () => {
-    toast({
-      title: "Templates Updated",
-      description: "Deliverable templates have been saved successfully.",
-    });
+  const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !profile?.firm_id) return;
+
+    setIsLoading(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${profile.firm_id}/logo.${fileExt}`;
+
+      const { error: uploadError, data } = await supabase.storage
+        .from('firm-assets')
+        .upload(fileName, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('firm-assets')
+        .getPublicUrl(fileName);
+
+      setLogoUrl(publicUrl);
+      toast.success('Logo uploaded successfully');
+    } catch (error) {
+      console.error('Error uploading logo:', error);
+      toast.error('Failed to upload logo');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const updateProfile = async () => {
+    if (!profile?.id) return;
+
+    setIsLoading(true);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update(profileData)
+        .eq('id', profile.id);
+
+      if (error) throw error;
+      toast.success('Profile updated successfully');
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast.error('Failed to update profile');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const updateFirm = async () => {
+    if (!profile?.firm_id) return;
+
+    setIsLoading(true);
+    try {
+      const { error } = await supabase
+        .from('firms')
+        .update(firmData)
+        .eq('id', profile.firm_id);
+
+      if (error) throw error;
+      toast.success('Firm information updated successfully');
+    } catch (error) {
+      console.error('Error updating firm:', error);
+      toast.error('Failed to update firm information');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Firm Settings</h1>
+          <h1 className="text-3xl font-bold">Settings</h1>
           <p className="text-muted-foreground">
-            Manage your firm's configuration and preferences
+            Manage your firm and personal preferences
           </p>
         </div>
       </div>
 
-      <Tabs defaultValue="general" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="general">General</TabsTrigger>
-          <TabsTrigger value="templates">Templates</TabsTrigger>
-          <TabsTrigger value="permissions">Permissions</TabsTrigger>
-          <TabsTrigger value="branding">Branding</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="general" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <SettingsIcon className="w-5 h-5 mr-2" />
-                General Settings
-              </CardTitle>
-              <CardDescription>
-                Configure basic firm settings and preferences
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid w-full max-w-sm items-center gap-1.5">
-                <Label htmlFor="firmName">Firm Name</Label>
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Personal Settings */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <User className="w-5 h-5 mr-2" />
+              Personal Information
+            </CardTitle>
+            <CardDescription>
+              Update your personal details
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="first_name">First Name</Label>
                 <Input
-                  type="text"
-                  id="firmName"
-                  placeholder="Enter firm name"
-                  value={firmName}
-                  onChange={(e) => setFirmName(e.target.value)}
+                  id="first_name"
+                  value={profileData.first_name}
+                  onChange={(e) => setProfileData({...profileData, first_name: e.target.value})}
                 />
               </div>
-              
-              <div className="grid w-full max-w-sm items-center gap-1.5">
-                <Label htmlFor="billingRate">Default Billing Rate ($/hour)</Label>
+              <div>
+                <Label htmlFor="last_name">Last Name</Label>
                 <Input
-                  type="number"
-                  id="billingRate"
-                  placeholder="150"
-                  value={defaultBillingRate}
-                  onChange={(e) => setDefaultBillingRate(e.target.value)}
+                  id="last_name"
+                  value={profileData.last_name}
+                  onChange={(e) => setProfileData({...profileData, last_name: e.target.value})}
                 />
               </div>
+            </div>
 
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="autoAssign"
-                  checked={autoAssignDeliverables}
-                  onCheckedChange={setAutoAssignDeliverables}
+            <div>
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                value={profileData.email}
+                onChange={(e) => setProfileData({...profileData, email: e.target.value})}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="phone">Phone</Label>
+              <Input
+                id="phone"
+                value={profileData.phone}
+                onChange={(e) => setProfileData({...profileData, phone: e.target.value})}
+              />
+            </div>
+
+            <Button onClick={updateProfile} disabled={isLoading}>
+              <Save className="w-4 h-4 mr-2" />
+              Save Profile
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Firm Settings */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Building className="w-5 h-5 mr-2" />
+              Firm Information
+            </CardTitle>
+            <CardDescription>
+              Update your firm details and branding
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Firm Logo Upload */}
+            <div>
+              <Label>Firm Logo</Label>
+              <div className="flex items-center space-x-4 mt-2">
+                <Avatar className="h-16 w-16">
+                  <AvatarImage src={logoUrl} />
+                  <AvatarFallback>
+                    <Building className="h-8 w-8" />
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleLogoUpload}
+                    className="hidden"
+                    id="logo-upload"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => document.getElementById('logo-upload')?.click()}
+                    disabled={isLoading}
+                  >
+                    <Upload className="w-4 h-4 mr-2" />
+                    Upload Logo
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="firm_name">Firm Name</Label>
+              <Input
+                id="firm_name"
+                value={firmData.name}
+                onChange={(e) => setFirmData({...firmData, name: e.target.value})}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="firm_email">Firm Email</Label>
+                <Input
+                  id="firm_email"
+                  type="email"
+                  value={firmData.email}
+                  onChange={(e) => setFirmData({...firmData, email: e.target.value})}
                 />
-                <Label htmlFor="autoAssign">Auto-assign deliverables to new clients</Label>
               </div>
-
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="aiCategorization"
-                  checked={aiCategorization}
-                  onCheckedChange={setAiCategorization}
+              <div>
+                <Label htmlFor="firm_phone">Firm Phone</Label>
+                <Input
+                  id="firm_phone"
+                  value={firmData.phone}
+                  onChange={(e) => setFirmData({...firmData, phone: e.target.value})}
                 />
-                <Label htmlFor="aiCategorization">Enable AI document categorization</Label>
               </div>
+            </div>
 
-              <Button onClick={handleSaveGeneral}>Save General Settings</Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
+            <div>
+              <Label htmlFor="address">Address</Label>
+              <Input
+                id="address"
+                value={firmData.address}
+                onChange={(e) => setFirmData({...firmData, address: e.target.value})}
+              />
+            </div>
 
-        <TabsContent value="templates" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <FileText className="w-5 h-5 mr-2" />
-                Deliverable Templates
-              </CardTitle>
-              <CardDescription>
-                Set up default deliverable templates for new clients
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-4">
-                <div className="space-y-2">
-                  <Label>Monthly Management Accounts</Label>
-                  <Textarea
-                    placeholder="Template description and requirements..."
-                    className="min-h-[100px]"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label>Annual Tax Returns</Label>
-                  <Textarea
-                    placeholder="Template description and requirements..."
-                    className="min-h-[100px]"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label>VAT Returns</Label>
-                  <Textarea
-                    placeholder="Template description and requirements..."
-                    className="min-h-[100px]"
-                  />
-                </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="city">City</Label>
+                <Input
+                  id="city"
+                  value={firmData.city}
+                  onChange={(e) => setFirmData({...firmData, city: e.target.value})}
+                />
               </div>
-
-              <Button onClick={handleSaveTemplates}>Save Templates</Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="permissions" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Users className="w-5 h-5 mr-2" />
-                Role Permissions
-              </CardTitle>
-              <CardDescription>
-                Configure access control for different user roles
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="border rounded-lg p-4">
-                  <h4 className="font-medium mb-2">Partner Permissions</h4>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex items-center justify-between">
-                      <span>Full client access</span>
-                      <Switch defaultChecked disabled />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span>Team management</span>
-                      <Switch defaultChecked disabled />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span>Firm settings</span>
-                      <Switch defaultChecked disabled />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="border rounded-lg p-4">
-                  <h4 className="font-medium mb-2">Senior Staff Permissions</h4>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex items-center justify-between">
-                      <span>Assigned client access</span>
-                      <Switch defaultChecked />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span>Deliverable management</span>
-                      <Switch defaultChecked />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span>Task assignment</span>
-                      <Switch defaultChecked />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="border rounded-lg p-4">
-                  <h4 className="font-medium mb-2">Staff Permissions</h4>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex items-center justify-between">
-                      <span>Assigned task access</span>
-                      <Switch defaultChecked />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span>Document upload</span>
-                      <Switch defaultChecked />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span>Client communication</span>
-                      <Switch />
-                    </div>
-                  </div>
-                </div>
+              <div>
+                <Label htmlFor="state">State</Label>
+                <Input
+                  id="state"
+                  value={firmData.state}
+                  onChange={(e) => setFirmData({...firmData, state: e.target.value})}
+                />
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+            </div>
 
-        <TabsContent value="branding" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Palette className="w-5 h-5 mr-2" />
-                Branding & Appearance
-              </CardTitle>
-              <CardDescription>
-                Customize your firm's branding and visual identity
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label>Firm Logo</Label>
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                  <Upload className="mx-auto h-8 w-8 text-gray-400 mb-2" />
-                  <p className="text-sm text-gray-600">Click to upload logo or drag and drop</p>
-                  <p className="text-xs text-gray-500">PNG, JPG up to 2MB</p>
-                </div>
-              </div>
-
-              <div className="grid w-full max-w-sm items-center gap-1.5">
-                <Label htmlFor="primaryColor">Primary Color</Label>
-                <div className="flex items-center space-x-2">
-                  <Input
-                    type="color"
-                    id="primaryColor"
-                    className="w-12 h-10"
-                    defaultValue="#3b82f6"
-                  />
-                  <Input
-                    type="text"
-                    placeholder="#3b82f6"
-                    className="flex-1"
-                  />
-                </div>
-              </div>
-
-              <div className="grid w-full max-w-sm items-center gap-1.5">
-                <Label htmlFor="secondaryColor">Secondary Color</Label>
-                <div className="flex items-center space-x-2">
-                  <Input
-                    type="color"
-                    id="secondaryColor"
-                    className="w-12 h-10"
-                    defaultValue="#64748b"
-                  />
-                  <Input
-                    type="text"
-                    placeholder="#64748b"
-                    className="flex-1"
-                  />
-                </div>
-              </div>
-
-              <Button>Save Branding Settings</Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+            <Button onClick={updateFirm} disabled={isLoading}>
+              <Save className="w-4 h-4 mr-2" />
+              Save Firm Info
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };
 
-export default Settings;
+export default AppSettings;

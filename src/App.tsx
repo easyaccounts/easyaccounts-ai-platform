@@ -25,8 +25,9 @@ import SelectClient from '@/pages/app/SelectClient';
 import DeliverableMessages from '@/pages/app/DeliverableMessages';
 import DeliverableTasks from '@/pages/app/DeliverableTasks';
 import ClientDashboard from '@/pages/app/ClientDashboard';
+import ClientDeliverables from '@/pages/app/ClientDeliverables';
 import ClientDashboardPage from '@/pages/client/Dashboard';
-import ClientDeliverables from '@/pages/client/Deliverables';
+import ClientDeliverablesList from '@/pages/client/Deliverables';
 import ClientReports from '@/pages/client/Reports';
 import ClientRequests from '@/pages/client/Requests';
 import ClientTransactions from '@/pages/client/Transactions';
@@ -34,6 +35,7 @@ import ClientUploads from '@/pages/client/Uploads';
 import ClientSettings from '@/pages/client/Settings';
 import ClientTasks from '@/pages/client/Tasks';
 import ClientDocuments from '@/pages/client/Documents';
+import ClientTeam from '@/pages/client/Team';
 import NotFound from '@/pages/NotFound';
 import AssignClients from '@/pages/app/AssignClients';
 import TeamManagement from '@/pages/app/TeamManagement';
@@ -57,9 +59,9 @@ function App() {
                 <Route path="/app" element={<AppLayout />}>
                   <Route path="dashboard" element={<Dashboard />} />
                   <Route path="clients" element={<Clients />} />
-                  {/* New client-specific routes for firm members */}
+                  {/* Client-specific routes for firm members */}
                   <Route path="clients/:clientId/dashboard" element={<ClientDashboard />} />
-                  <Route path="clients/:clientId/deliverables" element={<Deliverables />} />
+                  <Route path="clients/:clientId/deliverables" element={<ClientDeliverables />} />
                   <Route path="clients/:clientId/documents" element={<ClientDocuments />} />
                   <Route path="clients/:clientId/requests" element={<Requests />} />
                   <Route path="clients/:clientId/transactions" element={<Transactions />} />
@@ -82,7 +84,7 @@ function App() {
                 {/* Protected client routes for business owners */}
                 <Route path="/client" element={<ClientLayout />}>
                   <Route path="dashboard" element={<ClientDashboardPage />} />
-                  <Route path="deliverables" element={<ClientDeliverables />} />
+                  <Route path="deliverables" element={<ClientDeliverablesList />} />
                   <Route path="reports" element={<ClientReports />} />
                   <Route path="requests" element={<ClientRequests />} />
                   <Route path="transactions" element={<ClientTransactions />} />
@@ -90,6 +92,7 @@ function App() {
                   <Route path="settings" element={<ClientSettings />} />
                   <Route path="tasks" element={<ClientTasks />} />
                   <Route path="documents" element={<ClientDocuments />} />
+                  <Route path="team" element={<ClientTeam />} />
                 </Route>
 
                 {/* Fallback route */}
