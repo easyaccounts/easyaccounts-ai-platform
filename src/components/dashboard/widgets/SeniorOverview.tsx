@@ -1,21 +1,13 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, CheckSquare, AlertTriangle, TrendingUp } from 'lucide-react';
+import { Users, TrendingUp, CheckSquare, DollarSign } from 'lucide-react';
 import AssignedClientsWidget from '@/components/client/AssignedClientsWidget';
 import MyTasksWidget from '@/components/tasks/MyTasksWidget';
 import { useDashboardData } from '@/hooks/useDashboardData';
 
 const SeniorOverview = () => {
   const { data, isLoading } = useDashboardData('senior_staff');
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
 
   return (
     <div className="space-y-6">
@@ -28,7 +20,7 @@ const SeniorOverview = () => {
           <CardContent>
             <div className="text-2xl font-bold">{data?.assignedClients ?? 0}</div>
             <p className="text-xs text-muted-foreground">
-              Active assignments
+              Under your management
             </p>
           </CardContent>
         </Card>
@@ -49,12 +41,12 @@ const SeniorOverview = () => {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Pending Reviews</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{data?.pendingReviews ?? 0}</div>
             <p className="text-xs text-muted-foreground">
-              Require attention
+              Awaiting approval
             </p>
           </CardContent>
         </Card>
@@ -62,12 +54,12 @@ const SeniorOverview = () => {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Revenue Impact</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(data?.revenueImpact ?? 0)}</div>
+            <div className="text-2xl font-bold">${data?.revenueImpact ?? 0}</div>
             <p className="text-xs text-muted-foreground">
-              Assigned clients value
+              Monthly fee total
             </p>
           </CardContent>
         </Card>

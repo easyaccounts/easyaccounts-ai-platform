@@ -4,19 +4,26 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 
 interface DashboardData {
+  // Partner role
   totalClients?: number;
   monthlyRevenue?: number;
   activeDeliverables?: number;
   teamMembers?: number;
   topClientsByRevenue?: Array<{ client: string; revenue: number }>;
+  
+  // Senior staff role
   assignedClients?: number;
   completedWork?: number;
   pendingReviews?: number;
   revenueImpact?: number;
+  
+  // Staff role
   pendingTasks?: number;
   completedTasks?: number;
   documentsToReview?: number;
   activeClients?: number;
+  
+  // Client role
   deliverablesPending?: number;
   uploadsCompleted?: number;
   tasksInProgress?: number;
