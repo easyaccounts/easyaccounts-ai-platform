@@ -58,7 +58,7 @@ const AppSidebar = () => {
           { title: "Requests", url: "/app/requests", icon: MessageSquare },
           { title: "Transactions", url: "/app/transactions", icon: Upload },
         ];
-      } else if (['senior_staff', 'staff'].includes(user_role)) {
+      } else if (user_role === 'senior_staff') {
         return [
           { title: "Dashboard", url: "/app/dashboard", icon: Home },
           { title: "My Clients", url: "/app/clients", icon: Building2 },
@@ -68,17 +68,33 @@ const AppSidebar = () => {
           { title: "Requests", url: "/app/requests", icon: MessageSquare },
           { title: "Transactions", url: "/app/transactions", icon: Upload },
         ];
+      } else if (user_role === 'staff') {
+        return [
+          { title: "Dashboard", url: "/app/dashboard", icon: Home },
+          { title: "My Tasks", url: "/app/tasks", icon: CheckSquare },
+          { title: "Transactions", url: "/app/transactions", icon: Upload },
+          { title: "Assigned Clients", url: "/app/clients", icon: Building2 },
+        ];
       }
     }
 
     // Business owner navigation
     if (user_group === 'business_owner') {
-      return [
-        { title: "Dashboard", url: "/app/dashboard", icon: Home },
-        { title: "Reports", url: "/app/reports", icon: BarChart3 },
-        { title: "Transactions", url: "/app/transactions", icon: Upload },
-        { title: "Settings", url: "/app/settings", icon: Settings },
-      ];
+      if (user_role === 'management') {
+        return [
+          { title: "Dashboard", url: "/app/dashboard", icon: Home },
+          { title: "Clients", url: "/app/clients", icon: Building2 },
+          { title: "Deliverables", url: "/app/deliverables", icon: FileText },
+          { title: "Reports", url: "/app/reports", icon: BarChart3 },
+        ];
+      } else if (user_role === 'accounting_team') {
+        return [
+          { title: "Dashboard", url: "/app/dashboard", icon: Home },
+          { title: "Transactions", url: "/app/transactions", icon: Upload },
+          { title: "My Tasks", url: "/app/tasks", icon: CheckSquare },
+          { title: "Assigned Clients", url: "/app/clients", icon: Building2 },
+        ];
+      }
     }
 
     return [];

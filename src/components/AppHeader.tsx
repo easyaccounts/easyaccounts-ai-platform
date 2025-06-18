@@ -37,6 +37,7 @@ const AppHeader = () => {
 
   const handleSignOut = async () => {
     await signOut();
+    navigate('/');
   };
 
   const getInitials = () => {
