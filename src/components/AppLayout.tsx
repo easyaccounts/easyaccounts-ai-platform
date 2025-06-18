@@ -4,6 +4,7 @@ import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserContext } from "@/hooks/useUserContext";
 import { ClientContextProvider } from "@/hooks/useClientContext";
+import { SessionContextProvider } from "@/hooks/useSessionContext";
 import ClientViewBanner from "@/components/ClientViewBanner";
 import AppSidebar from "@/components/AppSidebar";
 import AppHeader from "@/components/AppHeader";
@@ -33,19 +34,21 @@ export default function AppLayout() {
 
   console.log('AppLayout: Rendering main layout');
   return (
-    <ClientContextProvider>
-      <SidebarProvider>
-        <AppSidebar />
-        <SidebarInset>
-          <AppHeader />
-          
-          {currentView === 'client' && <ClientViewBanner />}
-          
-          <main className="flex-1 overflow-auto">
-            <Outlet />
-          </main>
-        </SidebarInset>
-      </SidebarProvider>
-    </ClientContextProvider>
+    <SessionContextProvider>
+      <ClientContextProvider>
+        <SidebarProvider>
+          <AppSidebar />
+          <SidebarInset>
+            <AppHeader />
+            
+            {currentView === 'client' && <ClientViewBanner />}
+            
+            <main className="flex-1 overflow-auto">
+              <Outlet />
+            </main>
+          </SidebarInset>
+        </SidebarProvider>
+      </ClientContextProvider>
+    </SessionContextProvider>
   );
 }
