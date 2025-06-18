@@ -9,6 +9,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useUserContext } from '@/hooks/useUserContext';
 import { Database } from '@/integrations/supabase/types';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
@@ -33,6 +34,7 @@ interface FormData {
 const AddEditUserModal = ({ isOpen, onClose, user, onUserUpdated }: AddEditUserModalProps) => {
   const { toast } = useToast();
   const { profile } = useAuth();
+  const { firmId } = useUserContext();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     first_name: '',
@@ -47,6 +49,17 @@ const AddEditUserModal = ({ isOpen, onClose, user, onUserUpdated }: AddEditUserM
 
   useEffect(() => {
     if (isOpen) {
+      // Check if firmId is available
+      if (!firmId && !user) {
+        toast({
+          title: 'Error',
+          description: 'Unable to detect your firm — please refresh or contact support.',
+          variant: 'destructive',
+        });
+        onClose();
+        return;
+      }
+
       fetchClients();
       if (user) {
         setFormData({
@@ -62,7 +75,7 @@ const AddEditUserModal = ({ isOpen, onClose, user, onUserUpdated }: AddEditUserM
         resetForm();
       }
     }
-  }, [isOpen, user]);
+  }, [isOpen, user, firmId]);
 
   const resetForm = () => {
     setFormData({
@@ -81,7 +94,7 @@ const AddEditUserModal = ({ isOpen, onClose, user, onUserUpdated }: AddEditUserM
       const { data, error } = await supabase
         .from('clients')
         .select('*')
-        .eq('firm_id', profile?.firm_id)
+        .eq('firm_id', firmId)
         .order('name');
 
       if (error) throw error;
@@ -131,6 +144,11 @@ const AddEditUserModal = ({ isOpen, onClose, user, onUserUpdated }: AddEditUserM
         if (error) throw error;
         await updateUserAssignments(user.id);
       } else {
+        // Validate firmId before creating new user
+        if (!firmId) {
+          throw new Error('Unable to detect your firm — please refresh or contact support.');
+        }
+
         // Create new team member profile directly
         const newUserId = crypto.randomUUID();
         
@@ -144,7 +162,7 @@ const AddEditUserModal = ({ isOpen, onClose, user, onUserUpdated }: AddEditUserM
             phone: formData.phone,
             user_role: formData.user_role,
             user_group: 'accounting_firm' as const,
-            firm_id: profile?.firm_id,
+            firm_id: firmId,
             status: formData.status,
           });
 
