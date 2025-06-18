@@ -1,198 +1,123 @@
 
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, MessageSquare, ExternalLink } from 'lucide-react';
-import { useDeliverableTasks } from '@/hooks/useDeliverableTasks';
-import TaskCommentsModal from '@/components/tasks/TaskCommentsModal';
+import { CheckSquare, Clock, AlertCircle } from 'lucide-react';
 
 const MyTasks = () => {
-  const navigate = useNavigate();
-  const { myTasks, loading, getTasksByStatus, getOverdueTasks } = useDeliverableTasks();
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [commentsModalOpen, setCommentsModalOpen] = useState(false);
-  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
-
-  const getFilteredTasks = () => {
-    switch (statusFilter) {
-      case 'pending':
-        return getTasksByStatus('pending');
-      case 'in_progress':
-        return getTasksByStatus('in_progress');
-      case 'completed':
-        return getTasksByStatus('completed');
-      case 'overdue':
-        return getOverdueTasks();
-      default:
-        return myTasks;
+  // Mock data for now - in real implementation, this would come from useQuery
+  const tasks = [
+    {
+      id: '1',
+      title: 'Review ABC Corp Tax Returns',
+      client: 'ABC Corporation',
+      dueDate: '2024-01-15',
+      priority: 'high',
+      status: 'in_progress'
+    },
+    {
+      id: '2',
+      title: 'Prepare Monthly Financial Statements',
+      client: 'XYZ Ltd',
+      dueDate: '2024-01-20',
+      priority: 'medium',
+      status: 'pending'
     }
-  };
-
-  const openComments = (taskId: string) => {
-    setSelectedTaskId(taskId);
-    setCommentsModalOpen(true);
-  };
-
-  const handleCommentsModalClose = () => {
-    setCommentsModalOpen(false);
-    setSelectedTaskId(null);
-  };
-
-  const navigateToDeliverableTasks = (deliverableId: string) => {
-    navigate(`/app/deliverables/${deliverableId}/tasks`);
-  };
+  ];
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'pending': return 'destructive';
-      case 'in_progress': return 'default';
       case 'completed': return 'default';
-      default: return 'secondary';
+      case 'in_progress': return 'secondary';
+      case 'pending': return 'outline';
+      default: return 'outline';
     }
   };
 
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return 'No due date';
-    return new Date(dateString).toLocaleDateString();
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'high': return 'destructive';
+      case 'medium': return 'secondary';
+      case 'low': return 'outline';
+      default: return 'outline';
+    }
   };
-
-  const isOverdue = (dueDate: string | null, status: string) => {
-    if (!dueDate || status === 'completed') return false;
-    const today = new Date().toISOString().split('T')[0];
-    return dueDate < today;
-  };
-
-  const filteredTasks = getFilteredTasks();
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold">My Tasks</h1>
-          <p className="text-muted-foreground">
-            Tasks assigned to you across all deliverables
-          </p>
-        </div>
+      <div className="flex items-center gap-2">
+        <CheckSquare className="w-6 h-6" />
+        <h1 className="text-2xl font-bold">My Tasks</h1>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Pending Tasks</CardTitle>
+            <Clock className="h-4 w-4 text-orange-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-orange-600">2</div>
+            <p className="text-xs text-muted-foreground">Awaiting completion</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">In Progress</CardTitle>
+            <AlertCircle className="h-4 w-4 text-blue-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-600">1</div>
+            <p className="text-xs text-muted-foreground">Currently working on</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Completed</CardTitle>
+            <CheckSquare className="h-4 w-4 text-green-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">5</div>
+            <p className="text-xs text-muted-foreground">This week</p>
+          </CardContent>
+        </Card>
       </div>
 
       <Card>
         <CardHeader>
-          <div className="flex justify-between items-center">
-            <CardTitle>All Tasks</CardTitle>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-48">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Tasks</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="in_progress">In Progress</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
-                <SelectItem value="overdue">Overdue</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          <CardTitle>Active Tasks</CardTitle>
+          <CardDescription>
+            Tasks assigned to you
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          {loading ? (
-            <div className="text-center py-8">Loading tasks...</div>
-          ) : filteredTasks.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              No tasks found for the selected filter.
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Task</TableHead>
-                  <TableHead>Client</TableHead>
-                  <TableHead>Deliverable</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Due Date</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredTasks.map((task) => (
-                  <TableRow key={task.id}>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">{task.title}</div>
-                        {task.description && (
-                          <div className="text-sm text-muted-foreground">
-                            {task.description}
-                          </div>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {task.deliverables?.clients?.name}
-                    </TableCell>
-                    <TableCell>
-                      {task.deliverables?.title}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={getStatusColor(task.status)}>
-                        {task.status.replace('_', ' ')}
-                      </Badge>
-                      {isOverdue(task.due_date, task.status) && (
-                        <Badge variant="destructive" className="ml-1">
-                          Overdue
-                        </Badge>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-1">
-                        <Calendar className="w-4 h-4 text-muted-foreground" />
-                        <span className={isOverdue(task.due_date, task.status) ? 'text-red-600' : ''}>
-                          {formatDate(task.due_date)}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex space-x-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => openComments(task.id)}
-                        >
-                          <MessageSquare className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => navigateToDeliverableTasks(task.deliverable_id)}
-                        >
-                          <ExternalLink className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
+          <div className="space-y-4">
+            {tasks.map((task) => (
+              <div key={task.id} className="border rounded-lg p-4">
+                <div className="flex justify-between items-start mb-2">
+                  <h3 className="font-semibold">{task.title}</h3>
+                  <div className="flex gap-2">
+                    <Badge variant={getPriorityColor(task.priority)}>
+                      {task.priority}
+                    </Badge>
+                    <Badge variant={getStatusColor(task.status)}>
+                      {task.status.replace('_', ' ')}
+                    </Badge>
+                  </div>
+                </div>
+                <p className="text-sm text-muted-foreground mb-2">
+                  Client: {task.client}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Due: {new Date(task.dueDate).toLocaleDateString()}
+                </p>
+              </div>
+            ))}
+          </div>
         </CardContent>
       </Card>
-
-      {commentsModalOpen && selectedTaskId && (
-        <TaskCommentsModal
-          isOpen={commentsModalOpen}
-          onClose={handleCommentsModalClose}
-          taskId={selectedTaskId}
-        />
-      )}
     </div>
   );
 };

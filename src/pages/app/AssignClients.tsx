@@ -2,150 +2,148 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { UserCheck, Users, Building2 } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useTeamManager } from '@/hooks/useTeamManager';
+import { Badge } from '@/components/ui/badge';
+import { Users, Building2 } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
 
 const AssignClients = () => {
-  const { teamMembers, clients, assignments, isLoading, assignClient, isAssigning } = useTeamManager();
-  const [selectedClient, setSelectedClient] = useState('');
-  const [selectedTeamMember, setSelectedTeamMember] = useState('');
+  const { teamMembers, clients, assignments, assignClient, isAssigning } = useTeamManager();
+  const [selectedAssignments, setSelectedAssignments] = useState<{[key: string]: string[]}>({});
 
-  const handleAssignment = () => {
-    if (selectedClient && selectedTeamMember) {
-      assignClient({ 
-        clientId: selectedClient, 
-        teamMemberId: selectedTeamMember 
+  const handleTeamMemberToggle = (teamMemberId: string, clientId: string, checked: boolean) => {
+    setSelectedAssignments(prev => {
+      const current = prev[teamMemberId] || [];
+      if (checked) {
+        return {
+          ...prev,
+          [teamMemberId]: [...current, clientId]
+        };
+      } else {
+        return {
+          ...prev,
+          [teamMemberId]: current.filter(id => id !== clientId)
+        };
+      }
+    });
+  };
+
+  const handleSaveAssignments = async () => {
+    try {
+      for (const [teamMemberId, clientIds] of Object.entries(selectedAssignments)) {
+        for (const clientId of clientIds) {
+          // Check if assignment already exists
+          const existingAssignment = assignments.find(
+            a => a.team_member_id === teamMemberId && a.client_id === clientId
+          );
+          
+          if (!existingAssignment) {
+            await assignClient({ teamMemberId, clientId });
+          }
+        }
+      }
+      
+      toast({
+        title: 'Success',
+        description: 'Client assignments updated successfully',
       });
-      setSelectedClient('');
-      setSelectedTeamMember('');
+      
+      setSelectedAssignments({});
+    } catch (error) {
+      console.error('Error saving assignments:', error);
     }
   };
 
-  const getAssignmentsByClient = () => {
-    return assignments.reduce((acc, assignment) => {
-      acc[assignment.client_id] = assignment;
-      return acc;
-    }, {} as Record<string, any>);
+  const getAssignedClients = (teamMemberId: string) => {
+    return assignments
+      .filter(a => a.team_member_id === teamMemberId)
+      .map(a => a.client_id);
   };
 
-  const clientAssignments = getAssignmentsByClient();
+  const isClientAssigned = (teamMemberId: string, clientId: string) => {
+    const assignedClients = getAssignedClients(teamMemberId);
+    const selectedClients = selectedAssignments[teamMemberId] || [];
+    return assignedClients.includes(clientId) || selectedClients.includes(clientId);
+  };
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">Assign Clients</h1>
+          <h1 className="text-2xl font-bold">Assign Clients</h1>
           <p className="text-muted-foreground">
-            Assign team members to client accounts
+            Assign clients to team members for project management
           </p>
         </div>
+        <Button 
+          onClick={handleSaveAssignments}
+          disabled={isAssigning || Object.keys(selectedAssignments).length === 0}
+        >
+          {isAssigning ? 'Saving...' : 'Save Assignments'}
+        </Button>
       </div>
 
-      {isLoading ? (
-        <div className="text-center py-8">Loading data...</div>
+      {teamMembers.length === 0 || clients.length === 0 ? (
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-center py-8">
+              {teamMembers.length === 0 && (
+                <div className="mb-4">
+                  <Users className="mx-auto h-12 w-12 text-gray-400 mb-2" />
+                  <p className="text-gray-600">No team members found. Add team members first.</p>
+                </div>
+              )}
+              {clients.length === 0 && (
+                <div>
+                  <Building2 className="mx-auto h-12 w-12 text-gray-400 mb-2" />
+                  <p className="text-gray-600">No clients found. Add clients first.</p>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
       ) : (
-        <div className="grid gap-6 lg:grid-cols-2">
-          {/* Assignment Form */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <UserCheck className="w-5 h-5 mr-2" />
-                New Assignment
-              </CardTitle>
-              <CardDescription>
-                Assign a client to a team member
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Select Client</label>
-                <Select value={selectedClient} onValueChange={setSelectedClient}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choose a client..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {clients.map((client) => (
-                      <SelectItem key={client.id} value={client.id}>
+        <div className="space-y-6">
+          {teamMembers
+            .filter(member => member.user_role !== 'partner')
+            .map((teamMember) => (
+            <Card key={teamMember.id}>
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <span>{teamMember.first_name} {teamMember.last_name}</span>
+                  <Badge variant="outline">
+                    {teamMember.user_role.replace('_', ' ')}
+                  </Badge>
+                </CardTitle>
+                <CardDescription>
+                  Currently assigned to {getAssignedClients(teamMember.id).length} clients
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {clients.map((client) => (
+                    <div key={client.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`${teamMember.id}-${client.id}`}
+                        checked={isClientAssigned(teamMember.id, client.id)}
+                        onCheckedChange={(checked) => 
+                          handleTeamMemberToggle(teamMember.id, client.id, checked as boolean)
+                        }
+                        disabled={getAssignedClients(teamMember.id).includes(client.id)}
+                      />
+                      <label 
+                        htmlFor={`${teamMember.id}-${client.id}`}
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                      >
                         {client.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Select Team Member</label>
-                <Select value={selectedTeamMember} onValueChange={setSelectedTeamMember}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choose a team member..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {teamMembers
-                      .filter(member => member.user_role !== 'partner')
-                      .map((member) => (
-                        <SelectItem key={member.id} value={member.id}>
-                          {member.first_name} {member.last_name} - {member.user_role.replace('_', ' ')}
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <Button 
-                onClick={handleAssignment}
-                disabled={!selectedClient || !selectedTeamMember || isAssigning}
-                className="w-full"
-              >
-                {isAssigning ? 'Assigning...' : 'Assign Client'}
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Current Assignments */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Users className="w-5 h-5 mr-2" />
-                Current Assignments
-              </CardTitle>
-              <CardDescription>
-                Overview of existing client assignments
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {clients.length === 0 ? (
-                  <div className="text-center py-4 text-gray-500">
-                    No clients available
-                  </div>
-                ) : (
-                  clients.map((client) => {
-                    const assignment = clientAssignments[client.id];
-                    return (
-                      <div key={client.id} className="flex items-center justify-between p-3 border rounded-lg">
-                        <div className="flex items-center space-x-3">
-                          <Building2 className="h-4 w-4 text-blue-500" />
-                          <div>
-                            <p className="font-medium">{client.name}</p>
-                            <p className="text-sm text-muted-foreground">
-                              {assignment 
-                                ? `Assigned to ${assignment.profiles?.first_name} ${assignment.profiles?.last_name}`
-                                : 'Unassigned'
-                              }
-                            </p>
-                          </div>
-                        </div>
-                        <Button variant="outline" size="sm">
-                          {assignment ? 'Reassign' : 'Assign'}
-                        </Button>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-            </CardContent>
-          </Card>
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       )}
     </div>

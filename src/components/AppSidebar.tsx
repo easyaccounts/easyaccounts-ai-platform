@@ -1,8 +1,9 @@
 
-import { Home, Users, FileText, Settings, UserCheck, Upload, CheckSquare, Building2, BarChart3, MessageSquare, LogOut } from "lucide-react";
+import { Home, Users, FileText, Settings, UserCheck, Upload, CheckSquare, Building2, BarChart3, MessageSquare, LogOut, Eye } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserContext } from "@/hooks/useUserContext";
+import ViewToggle from "./ViewToggle";
 import {
   Sidebar,
   SidebarContent,
@@ -27,7 +28,6 @@ const AppSidebar = () => {
     await signOut();
   };
 
-  // Show loading skeleton while context loads
   if (loading || !profile) {
     return (
       <Sidebar>
@@ -53,19 +53,24 @@ const AppSidebar = () => {
     );
   }
 
-  // Get navigation items based on current view and user role
   const getFirmNavigationItems = () => {
     const baseItems = [
       { title: "Dashboard", url: "/app/dashboard", icon: Home },
     ];
 
-    // Add firm management items for partners
     if (profile.user_role === 'partner') {
       baseItems.push(
         { title: "Clients", url: "/app/clients", icon: Building2 },
         { title: "Team Management", url: "/app/team", icon: Users },
         { title: "Assign Clients", url: "/app/assign-clients", icon: UserCheck },
+        { title: "Reports", url: "/app/reports", icon: BarChart3 },
         { title: "Settings", url: "/app/settings", icon: Settings }
+      );
+    } else if (['senior_staff', 'staff'].includes(profile.user_role)) {
+      baseItems.push(
+        { title: "My Tasks", url: "/app/my-tasks", icon: CheckSquare },
+        { title: "Deliverables", url: "/app/deliverables", icon: FileText },
+        { title: "Uploads", url: "/app/uploads", icon: Upload }
       );
     }
 
@@ -73,7 +78,6 @@ const AppSidebar = () => {
   };
 
   const getClientNavigationItems = () => {
-    // Only show client items if a client is selected
     if (!currentClientId) return [];
     
     return [
@@ -92,7 +96,7 @@ const AppSidebar = () => {
   return (
     <Sidebar>
       <SidebarHeader className="border-b p-4">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 mb-4">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
             <BarChart3 className="h-4 w-4" />
           </div>
@@ -103,6 +107,11 @@ const AppSidebar = () => {
             </p>
           </div>
         </div>
+
+        {/* View Toggle */}
+        {(['partner', 'senior_staff', 'staff'].includes(profile.user_role)) && (
+          <ViewToggle />
+        )}
 
         {/* Client Selector for Client View */}
         {currentView === 'client' && availableClients.length > 0 && (
@@ -147,7 +156,6 @@ const AppSidebar = () => {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* Show message when in client view but no client selected */}
         {currentView === 'client' && !currentClientId && (
           <SidebarGroup>
             <SidebarGroupContent>

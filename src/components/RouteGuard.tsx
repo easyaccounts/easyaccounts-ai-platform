@@ -1,7 +1,7 @@
 
-import { useEffect, useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useUserContext } from '@/hooks/useUserContext';
+import { Navigate, useLocation } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 
 interface RouteGuardProps {
@@ -9,108 +9,51 @@ interface RouteGuardProps {
 }
 
 const RouteGuard = ({ children }: RouteGuardProps) => {
-  const { user, profile, loading } = useAuth();
-  const navigate = useNavigate();
+  const { user, loading: authLoading } = useAuth();
+  const { loading: contextLoading, userGroup, userRole } = useUserContext();
   const location = useLocation();
-  const [isChecking, setIsChecking] = useState(true);
 
-  const getRoleDashboard = (userGroup: string, userRole: string) => {
-    console.log('RouteGuard: Determining dashboard for:', { userGroup, userRole });
-    
-    // Business owners go to client dashboard
-    if (userGroup === 'business_owner') {
-      return '/client/dashboard';
-    }
-    
-    // Accounting firm members go to firm dashboard
-    if (userGroup === 'accounting_firm') {
-      return '/app/dashboard';
-    }
-    
-    console.warn('RouteGuard: Unknown role configuration, defaulting to /app/dashboard');
-    return '/app/dashboard';
-  };
+  const loading = authLoading || contextLoading;
 
-  useEffect(() => {
-    const checkAuthAndRedirect = () => {
-      if (loading) {
-        console.log('RouteGuard: Still loading auth state');
-        return;
-      }
-
-      const currentPath = location.pathname;
-      const isPublicPath = ['/', '/landing', '/auth'].includes(currentPath);
-      const isAppPath = currentPath.startsWith('/app');
-      const isClientPath = currentPath.startsWith('/client');
-
-      console.log('RouteGuard check:', { 
-        currentPath, 
-        isPublicPath, 
-        isAppPath, 
-        isClientPath,
-        user: !!user, 
-        profile: profile ? { userGroup: profile.user_group, userRole: profile.user_role } : null 
-      });
-
-      // User is not authenticated
-      if (!user || !profile) {
-        if (isAppPath || isClientPath) {
-          console.log('RouteGuard: Redirecting unauthenticated user to landing');
-          navigate('/', { replace: true });
-          return;
-        }
-        // Allow access to public paths
-        setIsChecking(false);
-        return;
-      }
-
-      // User is authenticated
-      if (user && profile) {
-        // If user is on public paths, redirect to their dashboard
-        if (isPublicPath) {
-          const dashboardPath = getRoleDashboard(profile.user_group, profile.user_role);
-          console.log(`RouteGuard: Redirecting authenticated user from ${currentPath} to ${dashboardPath}`);
-          navigate(dashboardPath, { replace: true });
-          return;
-        }
-        
-        // Strict portal separation: only accounting firm users can access /app routes
-        if (isAppPath && profile.user_group !== 'accounting_firm') {
-          const correctDashboard = getRoleDashboard(profile.user_group, profile.user_role);
-          console.log(`RouteGuard: Redirecting non-firm user from ${currentPath} to ${correctDashboard}`);
-          navigate(correctDashboard, { replace: true });
-          return;
-        }
-        
-        // Strict portal separation: only business owners can access /client routes
-        if (isClientPath && profile.user_group !== 'business_owner') {
-          const correctDashboard = getRoleDashboard(profile.user_group, profile.user_role);
-          console.log(`RouteGuard: Redirecting non-business user from ${currentPath} to ${correctDashboard}`);
-          navigate(correctDashboard, { replace: true });
-          return;
-        }
-        
-        console.log('RouteGuard: User authorized for current path');
-        setIsChecking(false);
-        return;
-      }
-
-      setIsChecking(false);
-    };
-
-    checkAuthAndRedirect();
-  }, [user, profile, loading, location.pathname, navigate]);
-
-  // Show loading spinner while checking auth or during redirects
-  if (loading || isChecking) {
+  if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
-          <p className="text-muted-foreground">Loading...</p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
       </div>
     );
+  }
+
+  // Public routes that don't require authentication
+  const publicRoutes = ['/', '/auth'];
+  const isPublicRoute = publicRoutes.includes(location.pathname);
+
+  // If user is not authenticated
+  if (!user) {
+    if (isPublicRoute) {
+      return <>{children}</>;
+    }
+    return <Navigate to="/auth" replace />;
+  }
+
+  // If user is authenticated but on public routes, redirect to dashboard
+  if (user && isPublicRoute) {
+    if (userGroup === 'business_owner') {
+      return <Navigate to="/client/dashboard" replace />;
+    } else {
+      return <Navigate to="/app/dashboard" replace />;
+    }
+  }
+
+  // Check role-based access
+  const isAppRoute = location.pathname.startsWith('/app');
+  const isClientRoute = location.pathname.startsWith('/client');
+
+  if (isAppRoute && userGroup !== 'accounting_firm') {
+    return <Navigate to="/client/dashboard" replace />;
+  }
+
+  if (isClientRoute && userGroup !== 'business_owner') {
+    return <Navigate to="/app/dashboard" replace />;
   }
 
   return <>{children}</>;

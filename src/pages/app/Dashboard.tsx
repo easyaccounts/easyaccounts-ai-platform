@@ -6,7 +6,7 @@ import { useFirmDashboard } from '@/hooks/useFirmDashboard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, FileText, Clock, TrendingUp } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 
 const Dashboard = () => {
@@ -14,12 +14,6 @@ const Dashboard = () => {
   const { data: dashboardData, isLoading: dashboardLoading } = useFirmDashboard();
   const navigate = useNavigate();
 
-  console.log('App Dashboard rendering:', { 
-    profile: profile ? { userGroup: profile.user_group, userRole: profile.user_role } : null,
-    loading
-  });
-
-  // If user is not a partner, use the role-based dashboard renderer
   if (profile && profile.user_role !== 'partner') {
     return (
       <DashboardRenderer 
@@ -30,12 +24,35 @@ const Dashboard = () => {
     );
   }
 
-  // Partner dashboard with live data
   if (profile && profile.user_role === 'partner') {
     const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 
+    if (dashboardLoading) {
+      return (
+        <div className="p-6 space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[1, 2, 3, 4].map((i) => (
+              <Card key={i} className="animate-pulse">
+                <CardHeader className="space-y-0 pb-2">
+                  <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-8 bg-gray-200 rounded w-1/2 mb-2"></div>
+                  <div className="h-3 bg-gray-200 rounded w-full"></div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="p-6 space-y-6">
+        <div className="flex justify-between items-center">
+          <h1 className="text-3xl font-bold">Firm Dashboard</h1>
+        </div>
+
         {/* KPI Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <Card>
@@ -45,9 +62,7 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{dashboardData?.totalClients ?? 0}</div>
-              <p className="text-xs text-muted-foreground">
-                Active clients in firm
-              </p>
+              <p className="text-xs text-muted-foreground">Active clients in firm</p>
             </CardContent>
           </Card>
 
@@ -58,9 +73,7 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{dashboardData?.totalDeliverables ?? 0}</div>
-              <p className="text-xs text-muted-foreground">
-                All deliverables
-              </p>
+              <p className="text-xs text-muted-foreground">All deliverables</p>
             </CardContent>
           </Card>
 
@@ -71,9 +84,7 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{dashboardData?.pendingDeliverables ?? 0}</div>
-              <p className="text-xs text-muted-foreground">
-                Require attention
-              </p>
+              <p className="text-xs text-muted-foreground">Require attention</p>
             </CardContent>
           </Card>
 
@@ -84,16 +95,13 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{dashboardData?.teamMembers ?? 0}</div>
-              <p className="text-xs text-muted-foreground">
-                Active team members
-              </p>
+              <p className="text-xs text-muted-foreground">Active team members</p>
             </CardContent>
           </Card>
         </div>
 
         {/* Charts */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Top 5 Clients by Revenue */}
           <Card>
             <CardHeader>
               <CardTitle>Top 5 Clients by Revenue</CardTitle>
@@ -111,7 +119,6 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          {/* Deliverable Status Distribution */}
           <Card>
             <CardHeader>
               <CardTitle>Deliverable Status Distribution</CardTitle>
@@ -142,7 +149,6 @@ const Dashboard = () => {
 
         {/* Recent Activity and Quick Actions */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Recent Activity */}
           <Card>
             <CardHeader>
               <CardTitle>Recent Activity</CardTitle>
@@ -162,7 +168,6 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          {/* Quick Actions */}
           <Card>
             <CardHeader>
               <CardTitle>Quick Actions</CardTitle>
@@ -172,14 +177,7 @@ const Dashboard = () => {
                 onClick={() => navigate('/app/clients')} 
                 className="w-full"
               >
-                Add New Client
-              </Button>
-              <Button 
-                onClick={() => navigate('/app/deliverables')} 
-                variant="outline" 
-                className="w-full"
-              >
-                Create Deliverable
+                Manage Clients
               </Button>
               <Button 
                 onClick={() => navigate('/app/team')} 
@@ -209,7 +207,6 @@ const Dashboard = () => {
     );
   }
 
-  // Fallback to the original dashboard renderer for other cases
   return (
     <DashboardRenderer 
       profile={profile} 
