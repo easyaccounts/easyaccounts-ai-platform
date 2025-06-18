@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useTeamManager } from '@/hooks/useTeamManager';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,7 +15,7 @@ import { Plus, Edit, Trash2, UserPlus } from 'lucide-react';
 import AddEditUserModal from '@/components/team/AddEditUserModal';
 
 const TeamManagement = () => {
-  const { teamMembers, isLoading } = useTeamManager();
+  const { teamMembers, isLoading, refreshTeamMembers } = useTeamManager();
   const [modalOpen, setModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
 
@@ -33,6 +32,11 @@ const TeamManagement = () => {
   const handleModalClose = () => {
     setModalOpen(false);
     setEditingUser(null);
+  };
+
+  const handleUserUpdated = () => {
+    refreshTeamMembers();
+    handleModalClose();
   };
 
   const getRoleColor = (role: string) => {
@@ -130,7 +134,7 @@ const TeamManagement = () => {
         isOpen={modalOpen}
         onClose={handleModalClose}
         user={editingUser}
-        onUserSaved={handleModalClose}
+        onUserUpdated={handleUserUpdated}
       />
     </div>
   );
