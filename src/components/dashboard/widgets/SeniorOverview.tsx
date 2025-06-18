@@ -4,8 +4,19 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, CheckSquare, AlertTriangle, TrendingUp } from 'lucide-react';
 import AssignedClientsWidget from '@/components/client/AssignedClientsWidget';
 import MyTasksWidget from '@/components/tasks/MyTasksWidget';
+import { useDashboardData } from '@/hooks/useDashboardData';
 
 const SeniorOverview = () => {
+  const { data, isLoading } = useDashboardData('senior_staff');
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -15,7 +26,7 @@ const SeniorOverview = () => {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">8</div>
+            <div className="text-2xl font-bold">{data?.assignedClients ?? 0}</div>
             <p className="text-xs text-muted-foreground">
               Active assignments
             </p>
@@ -28,7 +39,7 @@ const SeniorOverview = () => {
             <CheckSquare className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">23</div>
+            <div className="text-2xl font-bold">{data?.completedWork ?? 0}</div>
             <p className="text-xs text-muted-foreground">
               This month
             </p>
@@ -41,7 +52,7 @@ const SeniorOverview = () => {
             <AlertTriangle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">5</div>
+            <div className="text-2xl font-bold">{data?.pendingReviews ?? 0}</div>
             <p className="text-xs text-muted-foreground">
               Require attention
             </p>
@@ -54,9 +65,9 @@ const SeniorOverview = () => {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">₹2.4L</div>
+            <div className="text-2xl font-bold">{formatCurrency(data?.revenueImpact ?? 0)}</div>
             <p className="text-xs text-muted-foreground">
-              This quarter
+              Assigned clients value
             </p>
           </CardContent>
         </Card>

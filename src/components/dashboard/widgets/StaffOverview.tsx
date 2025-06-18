@@ -4,8 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CheckSquare, Clock, FileText, Building2 } from 'lucide-react';
 import AssignedClientsWidget from '@/components/client/AssignedClientsWidget';
 import MyTasksWidget from '@/components/tasks/MyTasksWidget';
+import { useDashboardData } from '@/hooks/useDashboardData';
 
 const StaffOverview = () => {
+  const { data, isLoading } = useDashboardData('staff');
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -15,9 +18,9 @@ const StaffOverview = () => {
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">12</div>
+            <div className="text-2xl font-bold">{data?.pendingTasks ?? 0}</div>
             <p className="text-xs text-muted-foreground">
-              Due this week
+              Assigned to you
             </p>
           </CardContent>
         </Card>
@@ -28,7 +31,7 @@ const StaffOverview = () => {
             <CheckSquare className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">8</div>
+            <div className="text-2xl font-bold">{data?.completedTasks ?? 0}</div>
             <p className="text-xs text-muted-foreground">
               This month
             </p>
@@ -41,7 +44,7 @@ const StaffOverview = () => {
             <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">24</div>
+            <div className="text-2xl font-bold">{data?.documentsToReview ?? 0}</div>
             <p className="text-xs text-muted-foreground">
               To review
             </p>
@@ -54,7 +57,7 @@ const StaffOverview = () => {
             <Building2 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">5</div>
+            <div className="text-2xl font-bold">{data?.activeClients ?? 0}</div>
             <p className="text-xs text-muted-foreground">
               Assigned to you
             </p>

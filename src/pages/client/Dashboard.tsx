@@ -6,8 +6,9 @@ import { Button } from '@/components/ui/button';
 import { FileText, Upload, MessageSquare, Clock, CheckCircle, AlertCircle, Plus } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
 import { Link } from 'react-router-dom';
+import { useDashboardData } from '@/hooks/useDashboardData';
 
-// Sample data for client charts
+// Sample data for client charts (keeping charts as they need more complex data structure)
 const deliverableProgressData = [
   { stage: 'Pending', count: 3 },
   { stage: 'In Progress', count: 2 },
@@ -27,6 +28,7 @@ const uploadsOverTimeData = [
 const ClientDashboardPage = () => {
   const { profile } = useAuth();
   const { selectedClient } = useUserContext();
+  const { data, isLoading } = useDashboardData('client');
 
   console.log('Client Dashboard Page rendering:', { 
     profile: profile ? { userGroup: profile.user_group, userRole: profile.user_role } : null,
@@ -57,9 +59,9 @@ const ClientDashboardPage = () => {
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">3</div>
+            <div className="text-2xl font-bold">{data?.deliverablesPending ?? 0}</div>
             <p className="text-xs text-muted-foreground">
-              2 due this week
+              Awaiting action
             </p>
           </CardContent>
         </Card>
@@ -70,9 +72,9 @@ const ClientDashboardPage = () => {
             <Upload className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">25</div>
+            <div className="text-2xl font-bold">{data?.uploadsCompleted ?? 0}</div>
             <p className="text-xs text-muted-foreground">
-              +5 this month
+              This month
             </p>
           </CardContent>
         </Card>
@@ -83,7 +85,7 @@ const ClientDashboardPage = () => {
             <AlertCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">2</div>
+            <div className="text-2xl font-bold">{data?.tasksInProgress ?? 0}</div>
             <p className="text-xs text-muted-foreground">
               Accounting team working
             </p>
@@ -96,7 +98,7 @@ const ClientDashboardPage = () => {
             <MessageSquare className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">1</div>
+            <div className="text-2xl font-bold">{data?.openRequests ?? 0}</div>
             <p className="text-xs text-muted-foreground">
               Awaiting response
             </p>

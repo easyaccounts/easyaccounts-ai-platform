@@ -1479,6 +1479,10 @@ export type Database = {
         }
         Returns: string
       }
+      get_client_dashboard_stats: {
+        Args: { p_client_id: string }
+        Returns: Json
+      }
       get_current_user_business_id: {
         Args: Record<PropertyKey, never>
         Returns: string
@@ -1498,6 +1502,18 @@ export type Database = {
       get_current_user_view_mode: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      get_partner_dashboard_stats: {
+        Args: { p_firm_id: string }
+        Returns: Json
+      }
+      get_senior_dashboard_stats: {
+        Args: { p_user_id: string; p_firm_id: string }
+        Returns: Json
+      }
+      get_staff_dashboard_stats: {
+        Args: { p_user_id: string }
+        Returns: Json
       }
       get_user_assigned_clients: {
         Args: Record<PropertyKey, never>
