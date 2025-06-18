@@ -84,7 +84,7 @@ const AddEditClientModal = ({ isOpen, onClose, client, onClientSaved }: AddEditC
         status: 'active'
       });
     }
-  }, [client]);
+  }, [client, isOpen]);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -92,8 +92,16 @@ const AddEditClientModal = ({ isOpen, onClose, client, onClientSaved }: AddEditC
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
     if (!profile?.firm_id) {
-      toast.error('No firm ID available');
+      console.error('No firm ID available in profile:', profile);
+      toast.error('Unable to create client - no firm ID available');
+      return;
+    }
+
+    if (!profile?.id) {
+      console.error('No user ID available in profile:', profile);
+      toast.error('Unable to create client - not authenticated');
       return;
     }
 
@@ -120,6 +128,8 @@ const AddEditClientModal = ({ isOpen, onClose, client, onClientSaved }: AddEditC
         created_by: profile.id
       };
 
+      console.log('Creating/updating client with data:', clientData);
+
       if (client) {
         // Update existing client
         const { error } = await supabase
@@ -127,23 +137,33 @@ const AddEditClientModal = ({ isOpen, onClose, client, onClientSaved }: AddEditC
           .update(clientData)
           .eq('id', client.id);
 
-        if (error) throw error;
+        if (error) {
+          console.error('Error updating client:', error);
+          throw error;
+        }
         toast.success('Client updated successfully');
       } else {
         // Create new client
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('clients')
-          .insert([clientData]);
+          .insert([clientData])
+          .select()
+          .single();
 
-        if (error) throw error;
+        if (error) {
+          console.error('Error creating client:', error);
+          throw error;
+        }
+
+        console.log('Client created successfully:', data);
         toast.success('Client created successfully');
       }
 
       onClientSaved();
       onClose();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving client:', error);
-      toast.error('Failed to save client');
+      toast.error(error.message || 'Failed to save client');
     } finally {
       setLoading(false);
     }

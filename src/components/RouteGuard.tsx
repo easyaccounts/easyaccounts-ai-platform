@@ -17,23 +17,18 @@ const RouteGuard = ({ children }: RouteGuardProps) => {
   const getRoleDashboard = (userGroup: string, userRole: string) => {
     console.log('RouteGuard: Determining dashboard for:', { userGroup, userRole });
     
-    // Business owners (client group) go to client dashboard
+    // Business owners go to client dashboard
     if (userGroup === 'business_owner') {
       return '/client/dashboard';
     }
     
-    // Accounting firm members
+    // Accounting firm members go to firm dashboard
     if (userGroup === 'accounting_firm') {
-      if (['partner', 'senior_staff', 'staff'].includes(userRole)) {
-        return '/app/dashboard';
-      }
-      if (userRole === 'client') {
-        return '/client/dashboard';
-      }
+      return '/app/dashboard';
     }
     
     console.warn('RouteGuard: Unknown role configuration, defaulting to /app/dashboard');
-    return '/app/dashboard'; // Default fallback
+    return '/app/dashboard';
   };
 
   useEffect(() => {
@@ -47,14 +42,12 @@ const RouteGuard = ({ children }: RouteGuardProps) => {
       const isPublicPath = ['/', '/landing', '/auth'].includes(currentPath);
       const isAppPath = currentPath.startsWith('/app');
       const isClientPath = currentPath.startsWith('/client');
-      const isClientSpecificPath = currentPath.startsWith('/app/clients/') && currentPath.includes('/dashboard');
 
       console.log('RouteGuard check:', { 
         currentPath, 
         isPublicPath, 
         isAppPath, 
-        isClientPath, 
-        isClientSpecificPath,
+        isClientPath,
         user: !!user, 
         profile: profile ? { userGroup: profile.user_group, userRole: profile.user_role } : null 
       });
@@ -81,40 +74,20 @@ const RouteGuard = ({ children }: RouteGuardProps) => {
           return;
         }
         
-        // Check role-based access to protected routes
-        if (isAppPath && !isClientSpecificPath) {
-          // Only allow firm members to access /app routes (except client-specific ones)
-          if (profile.user_group !== 'accounting_firm' || 
-              !['partner', 'senior_staff', 'staff'].includes(profile.user_role)) {
-            const correctDashboard = getRoleDashboard(profile.user_group, profile.user_role);
-            console.log(`RouteGuard: Redirecting unauthorized user from ${currentPath} to ${correctDashboard}`);
-            navigate(correctDashboard, { replace: true });
-            return;
-          }
-        }
-
-        if (isClientSpecificPath) {
-          // Only allow firm members to access client-specific routes
-          if (profile.user_group !== 'accounting_firm' || 
-              !['partner', 'senior_staff', 'staff'].includes(profile.user_role)) {
-            const correctDashboard = getRoleDashboard(profile.user_group, profile.user_role);
-            console.log(`RouteGuard: Redirecting unauthorized user from ${currentPath} to ${correctDashboard}`);
-            navigate(correctDashboard, { replace: true });
-            return;
-          }
+        // Strict portal separation: only accounting firm users can access /app routes
+        if (isAppPath && profile.user_group !== 'accounting_firm') {
+          const correctDashboard = getRoleDashboard(profile.user_group, profile.user_role);
+          console.log(`RouteGuard: Redirecting non-firm user from ${currentPath} to ${correctDashboard}`);
+          navigate(correctDashboard, { replace: true });
+          return;
         }
         
-        if (isClientPath) {
-          // Allow business owners and client roles to access /client routes
-          const allowedForClient = profile.user_group === 'business_owner' || 
-                                  profile.user_role === 'client';
-          
-          if (!allowedForClient) {
-            const correctDashboard = getRoleDashboard(profile.user_group, profile.user_role);
-            console.log(`RouteGuard: Redirecting unauthorized user from ${currentPath} to ${correctDashboard}`);
-            navigate(correctDashboard, { replace: true });
-            return;
-          }
+        // Strict portal separation: only business owners can access /client routes
+        if (isClientPath && profile.user_group !== 'business_owner') {
+          const correctDashboard = getRoleDashboard(profile.user_group, profile.user_role);
+          console.log(`RouteGuard: Redirecting non-business user from ${currentPath} to ${correctDashboard}`);
+          navigate(correctDashboard, { replace: true });
+          return;
         }
         
         console.log('RouteGuard: User authorized for current path');

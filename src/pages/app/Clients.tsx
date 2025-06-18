@@ -256,6 +256,7 @@ const Clients = () => {
                           variant="ghost"
                           size="sm"
                           onClick={() => handleViewClient(client.id)}
+                          title="View Client Dashboard"
                         >
                           <Eye className="w-4 h-4" />
                         </Button>
@@ -265,6 +266,7 @@ const Clients = () => {
                               variant="ghost"
                               size="sm"
                               onClick={() => handleEditClient(client)}
+                              title="Edit Client"
                             >
                               <Edit className="w-4 h-4" />
                             </Button>
@@ -272,6 +274,7 @@ const Clients = () => {
                               variant="ghost"
                               size="sm"
                               onClick={() => handleDeleteClient(client.id)}
+                              title="Delete Client"
                             >
                               <Trash2 className="w-4 h-4" />
                             </Button>

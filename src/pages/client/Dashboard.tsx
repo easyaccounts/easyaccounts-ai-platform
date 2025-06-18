@@ -1,4 +1,6 @@
+
 import React from 'react';
+import { useParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserContext } from '@/hooks/useUserContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -30,20 +32,47 @@ const ClientDashboardPage = () => {
   const { selectedClient } = useUserContext();
   const { data, isLoading } = useDashboardData('client');
 
+  // Check if we're in a client-specific route (for firm members)
+  const { clientId } = useParams();
+  const isContextAware = !!clientId;
+
   console.log('Client Dashboard Page rendering:', { 
     profile: profile ? { userGroup: profile.user_group, userRole: profile.user_role } : null,
-    selectedClient
+    selectedClient,
+    clientId,
+    isContextAware
   });
+
+  const getBaseRoute = () => {
+    if (isContextAware) {
+      return `/app/clients/${clientId}`;
+    }
+    return '/client';
+  };
+
+  const getPageTitle = () => {
+    if (isContextAware) {
+      return 'Client Dashboard';
+    }
+    return 'My Business Dashboard';
+  };
+
+  const getWelcomeMessage = () => {
+    if (isContextAware) {
+      return 'Manage this client\'s accounting and business needs.';
+    }
+    return `Welcome back, ${profile?.first_name}! Manage your business accounting here.`;
+  };
 
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Client Dashboard</h1>
+          <h1 className="text-3xl font-bold">{getPageTitle()}</h1>
           <p className="text-muted-foreground">
-            Welcome back, {profile?.first_name}! Manage your business accounting here.
+            {getWelcomeMessage()}
           </p>
-          {selectedClient && (
+          {selectedClient && !isContextAware && (
             <p className="text-sm text-blue-600 mt-1">
               Viewing: {selectedClient.name}
             </p>
@@ -87,7 +116,7 @@ const ClientDashboardPage = () => {
           <CardContent>
             <div className="text-2xl font-bold">{data?.tasksInProgress ?? 0}</div>
             <p className="text-xs text-muted-foreground">
-              Accounting team working
+              {isContextAware ? 'Accounting team working' : 'Accounting team working'}
             </p>
           </CardContent>
         </Card>
@@ -112,7 +141,7 @@ const ClientDashboardPage = () => {
         <Card>
           <CardHeader>
             <CardTitle>Deliverable Progress by Stage</CardTitle>
-            <CardDescription>Current status of your deliverables</CardDescription>
+            <CardDescription>Current status of deliverables</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
@@ -151,26 +180,36 @@ const ClientDashboardPage = () => {
       <Card>
         <CardHeader>
           <CardTitle>Quick Actions</CardTitle>
-          <CardDescription>Common tasks to help manage your business</CardDescription>
+          <CardDescription>
+            {isContextAware ? 'Manage this client\'s account' : 'Common tasks to help manage your business'}
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 md:grid-cols-2">
             <Button asChild className="h-auto flex flex-col items-center p-4 space-y-2">
-              <Link to="/client/requests">
+              <Link to={`${getBaseRoute()}/requests`}>
                 <MessageSquare className="h-6 w-6" />
                 <div className="text-center">
-                  <div className="font-medium">Request Document</div>
-                  <div className="text-xs text-muted-foreground">Ask for specific information</div>
+                  <div className="font-medium">
+                    {isContextAware ? 'View Requests' : 'Request Document'}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {isContextAware ? 'Client requests' : 'Ask for specific information'}
+                  </div>
                 </div>
               </Link>
             </Button>
             
             <Button asChild variant="outline" className="h-auto flex flex-col items-center p-4 space-y-2">
-              <Link to="/client/uploads">
+              <Link to={`${getBaseRoute()}/documents`}>
                 <Upload className="h-6 w-6" />
                 <div className="text-center">
-                  <div className="font-medium">Upload Files</div>
-                  <div className="text-xs text-muted-foreground">Upload receipts and documents</div>
+                  <div className="font-medium">
+                    {isContextAware ? 'View Documents' : 'Upload Files'}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {isContextAware ? 'Client documents' : 'Upload receipts and documents'}
+                  </div>
                 </div>
               </Link>
             </Button>
@@ -182,7 +221,9 @@ const ClientDashboardPage = () => {
       <Card>
         <CardHeader>
           <CardTitle>Latest Reports</CardTitle>
-          <CardDescription>Your most recent financial reports</CardDescription>
+          <CardDescription>
+            {isContextAware ? 'Recent financial reports for this client' : 'Your most recent financial reports'}
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -226,7 +267,7 @@ const ClientDashboardPage = () => {
       <Card>
         <CardHeader>
           <CardTitle>Recent Activity</CardTitle>
-          <CardDescription>Latest updates on your account</CardDescription>
+          <CardDescription>Latest updates on this account</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -240,14 +281,18 @@ const ClientDashboardPage = () => {
             <div className="flex items-center space-x-4">
               <Upload className="h-4 w-4 text-blue-500" />
               <div className="flex-1">
-                <p className="text-sm">You uploaded 5 new receipts</p>
+                <p className="text-sm">
+                  {isContextAware ? 'Client uploaded 5 new receipts' : 'You uploaded 5 new receipts'}
+                </p>
                 <p className="text-xs text-muted-foreground">1 day ago</p>
               </div>
             </div>
             <div className="flex items-center space-x-4">
               <MessageSquare className="h-4 w-4 text-purple-500" />
               <div className="flex-1">
-                <p className="text-sm">New message from your accounting team</p>
+                <p className="text-sm">
+                  {isContextAware ? 'New message from client' : 'New message from your accounting team'}
+                </p>
                 <p className="text-xs text-muted-foreground">2 days ago</p>
               </div>
             </div>
