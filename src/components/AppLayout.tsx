@@ -2,7 +2,7 @@
 import { Outlet } from "react-router-dom";
 import { SidebarProvider, SidebarInset, SidebarTrigger, Sidebar } from "@/components/ui/sidebar";
 import { useAuth } from "@/hooks/useAuth";
-import { useSessionContext } from "@/hooks/useSessionContext";
+import { useUserContext } from "@/hooks/useUserContext";
 import ClientViewBanner from "@/components/ClientViewBanner";
 import ViewModeToggle from "@/components/ViewModeToggle";
 import NotificationDropdown from "@/components/notifications/NotificationDropdown";
@@ -10,7 +10,7 @@ import { Separator } from "@/components/ui/separator";
 
 export default function AppLayout() {
   const { user } = useAuth();
-  const { viewMode } = useSessionContext();
+  const { currentView } = useUserContext();
 
   if (!user) {
     return null;
@@ -33,7 +33,7 @@ export default function AppLayout() {
           </div>
         </header>
         
-        {viewMode === 'client' && <ClientViewBanner />}
+        {currentView === 'client' && <ClientViewBanner />}
         
         <main className="flex-1 overflow-auto">
           <Outlet />
