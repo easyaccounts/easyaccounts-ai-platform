@@ -130,27 +130,27 @@ const AddEditUserModal = ({ isOpen, onClose, user, onUserUpdated }: AddEditUserM
         if (error) throw error;
         await updateUserAssignments(user.id);
       } else {
-        // Create new user profile (invitation-based)
-        const { error } = await supabase
-          .from('profiles')
-          .insert([{
-            id: crypto.randomUUID(),
-            email: formData.email,
+        // Create invitation for new user
+        const redirectUrl = `${window.location.origin}/auth`;
+        
+        const { error } = await supabase.auth.inviteUserByEmail(formData.email, {
+          redirectTo: redirectUrl,
+          data: {
             first_name: formData.first_name,
             last_name: formData.last_name,
-            phone: formData.phone,
             user_role: formData.user_role,
-            user_group: 'accounting_firm' as const,
+            user_group: 'accounting_firm',
             firm_id: profile?.firm_id,
-            status: 'pending',
-          }]);
+            firm_name: profile?.firm_name
+          }
+        });
 
         if (error) throw error;
       }
 
       toast({
         title: 'Success',
-        description: user ? 'User updated successfully' : 'Team member invitation created successfully',
+        description: user ? 'User updated successfully' : 'Team member invitation sent successfully',
       });
 
       onUserUpdated();
@@ -302,7 +302,7 @@ const AddEditUserModal = ({ isOpen, onClose, user, onUserUpdated }: AddEditUserM
               Cancel
             </Button>
             <Button type="submit" disabled={loading}>
-              {loading ? 'Saving...' : user ? 'Update User' : 'Create Invitation'}
+              {loading ? 'Saving...' : user ? 'Update User' : 'Send Invitation'}
             </Button>
           </div>
         </form>

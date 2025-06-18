@@ -21,7 +21,6 @@ import {
   ArrowLeft,
   Plus
 } from 'lucide-react';
-import { useDashboardData } from '@/hooks/useDashboardData';
 
 const ClientDashboard = () => {
   const { clientId } = useParams<{ clientId: string }>();
@@ -46,9 +45,22 @@ const ClientDashboard = () => {
     enabled: !!clientId,
   });
 
-  const { data: dashboardData, isLoading: dashboardLoading } = useDashboardData('client');
+  // Fetch dashboard stats
+  const { data: dashboardData } = useQuery({
+    queryKey: ['client-dashboard-stats', clientId],
+    queryFn: async () => {
+      if (!clientId) return null;
+      
+      const { data, error } = await supabase
+        .rpc('get_client_dashboard_stats', { p_client_id: clientId });
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!clientId,
+  });
 
-  if (clientLoading || dashboardLoading) {
+  if (clientLoading) {
     return (
       <div className="p-6">
         <div className="text-center py-8">Loading client dashboard...</div>
@@ -90,7 +102,7 @@ const ClientDashboard = () => {
           </div>
         </div>
         <div className="flex space-x-2">
-          <Button>
+          <Button onClick={() => navigate(`/app/clients/${clientId}/deliverables`)}>
             <Plus className="w-4 h-4 mr-2" />
             Create Deliverable
           </Button>

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -95,7 +94,7 @@ const AddEditClientModal = ({ isOpen, onClose, client, onClientSaved }: AddEditC
     
     if (!profile?.firm_id) {
       console.error('No firm ID available in profile:', profile);
-      toast.error('Unable to create client - no firm ID available');
+      toast.error('Unable to create client - user must be associated with a firm');
       return;
     }
 
