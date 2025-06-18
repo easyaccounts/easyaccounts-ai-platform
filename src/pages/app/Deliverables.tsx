@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -21,6 +20,7 @@ import { toast } from 'sonner';
 import { Database } from '@/integrations/supabase/types';
 import AddEditDeliverableModal from '@/components/deliverables/AddEditDeliverableModal';
 import { useNavigate } from 'react-router-dom';
+import MessageButton from '@/components/messages/MessageButton';
 
 type Deliverable = Database['public']['Tables']['deliverables']['Row'] & {
   clients?: { name: string };
@@ -270,6 +270,7 @@ const Deliverables = () => {
                         >
                           <CheckSquare className="w-4 h-4" />
                         </Button>
+                        <MessageButton deliverableId={deliverable.id} />
                         {canManageDeliverables && (
                           <Button
                             variant="ghost"
