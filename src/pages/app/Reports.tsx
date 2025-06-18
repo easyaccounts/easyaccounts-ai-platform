@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -6,6 +5,7 @@ import { useClientContext } from '@/hooks/useClientContext';
 import { useSessionContext } from '@/hooks/useSessionContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Table,
   TableBody,
@@ -16,14 +16,18 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Download, FileText, Eye } from 'lucide-react';
+import { Plus, Download, FileText, Eye, Activity } from 'lucide-react';
 import { toast } from 'sonner';
 import { Database } from '@/integrations/supabase/types';
 import AddEditReportModal from '@/components/reports/AddEditReportModal';
+import FinalisationBar from '@/components/finalisation/FinalisationBar';
+import AuditLogViewer from '@/components/audit/AuditLogViewer';
 
 type Report = Database['public']['Tables']['reports']['Row'] & {
   clients?: { name: string };
   approved_user?: { first_name: string; last_name: string };
+  finalised_user?: { first_name: string; last_name: string };
+  shared_user?: { first_name: string; last_name: string };
 };
 
 const Reports = () => {
@@ -36,6 +40,8 @@ const Reports = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [modalOpen, setModalOpen] = useState(false);
   const [editingReport, setEditingReport] = useState<Report | null>(null);
+  const [selectedReport, setSelectedReport] = useState<Report | null>(null);
+  const [activeTab, setActiveTab] = useState('list');
 
   const canManageReports = ['partner', 'senior_staff'].includes(profile?.user_role || '');
   const canGenerateReports = ['partner', 'senior_staff', 'staff'].includes(profile?.user_role || '');
@@ -101,11 +107,27 @@ const Reports = () => {
         .select('id, first_name, last_name')
         .in('id', approvedIds);
 
+      // Fetch finalised user names separately
+      const finalisedIds = [...new Set(reportsData?.map(r => r.finalised_by).filter(Boolean) || [])];
+      const { data: finalisedUsers } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name')
+        .in('id', finalisedIds);
+
+      // Fetch shared user names separately
+      const sharedIds = [...new Set(reportsData?.map(r => r.shared_with_client).filter(Boolean) || [])];
+      const { data: sharedUsers } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name')
+        .in('id', sharedIds);
+
       // Combine data
       const enrichedReports = reportsData?.map(report => ({
         ...report,
         clients: clients?.find(c => c.id === report.client_id),
-        approved_user: approvedUsers?.find(u => u.id === report.approved_by)
+        approved_user: approvedUsers?.find(u => u.id === report.approved_by),
+        finalised_user: finalisedUsers?.find(u => u.id === report.finalised_by),
+        shared_user: sharedUsers?.find(u => u.id === report.shared_with_client)
       })) || [];
 
       setReports(enrichedReports);
@@ -133,12 +155,26 @@ const Reports = () => {
     fetchReports();
   };
 
+  const handleViewReport = (report: Report) => {
+    setSelectedReport(report);
+    setActiveTab('view');
+  };
+
+  const handleBackToList = () => {
+    setSelectedReport(null);
+    setActiveTab('list');
+    fetchReports(); // Refresh data
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'draft': return 'secondary';
       case 'pending_review': return 'outline';
       case 'approved': return 'default';
       case 'rejected': return 'destructive';
+      case 'under_review': return 'outline';
+      case 'final': return 'default';
+      case 'shared_with_client': return 'default';
       default: return 'secondary';
     }
   };
@@ -147,6 +183,90 @@ const Reports = () => {
     if (!dateString) return 'N/A';
     return new Date(dateString).toLocaleDateString();
   };
+
+  if (selectedReport) {
+    return (
+      <div className="p-6 space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <Button
+              variant="outline"
+              onClick={handleBackToList}
+              className="mb-4"
+            >
+              ← Back to Reports
+            </Button>
+            <h1 className="text-3xl font-bold">{selectedReport.title}</h1>
+            <p className="text-muted-foreground">
+              Report Details and Management
+            </p>
+          </div>
+        </div>
+
+        <FinalisationBar
+          entityType="report"
+          entity={selectedReport}
+          onUpdate={handleBackToList}
+        />
+
+        <Tabs defaultValue="details" className="w-full">
+          <TabsList>
+            <TabsTrigger value="details">Details</TabsTrigger>
+            <TabsTrigger value="audit">
+              <Activity className="w-4 h-4 mr-2" />
+              Audit Trail
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="details" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Report Information</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Type</label>
+                    <p className="text-sm">{selectedReport.report_type?.replace('_', ' ').toUpperCase()}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Status</label>
+                    <Badge variant={getStatusColor(selectedReport.status || 'draft')}>
+                      {(selectedReport.status || 'draft').replace('_', ' ')}
+                    </Badge>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Period</label>
+                    <p className="text-sm">
+                      {selectedReport.period_start && selectedReport.period_end
+                        ? `${formatDate(selectedReport.period_start)} - ${formatDate(selectedReport.period_end)}`
+                        : 'N/A'
+                      }
+                    </p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Version</label>
+                    <p className="text-sm">v{selectedReport.version}</p>
+                  </div>
+                </div>
+                
+                {selectedReport.notes && (
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Notes</label>
+                    <p className="text-sm mt-1">{selectedReport.notes}</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="audit" className="space-y-6">
+            <AuditLogViewer entityType="report" entityId={selectedReport.id} />
+          </TabsContent>
+        </Tabs>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6">
@@ -194,9 +314,9 @@ const Reports = () => {
                   <SelectContent>
                     <SelectItem value="all">All Status</SelectItem>
                     <SelectItem value="draft">Draft</SelectItem>
-                    <SelectItem value="pending_review">Pending Review</SelectItem>
-                    <SelectItem value="approved">Approved</SelectItem>
-                    <SelectItem value="rejected">Rejected</SelectItem>
+                    <SelectItem value="under_review">Under Review</SelectItem>
+                    <SelectItem value="final">Final</SelectItem>
+                    <SelectItem value="shared_with_client">Shared with Client</SelectItem>
                   </SelectContent>
                 </Select>
               )}
@@ -239,7 +359,7 @@ const Reports = () => {
                     )}
                     <TableCell>
                       <Badge variant="outline">
-                        {report.report_type.replace('_', ' ').toUpperCase()}
+                        {report.report_type?.replace('_', ' ').toUpperCase()}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -259,7 +379,7 @@ const Reports = () => {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => {/* TODO: View report */}}
+                          onClick={() => handleViewReport(report)}
                         >
                           <Eye className="w-4 h-4" />
                         </Button>

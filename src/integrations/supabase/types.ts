@@ -73,6 +73,45 @@ export type Database = {
           },
         ]
       }
+      audit_logs: {
+        Row: {
+          action: string
+          context: string | null
+          created_at: string | null
+          description: string | null
+          entity_id: string
+          entity_type: string
+          id: string
+          metadata: Json | null
+          role: string
+          user_id: string
+        }
+        Insert: {
+          action: string
+          context?: string | null
+          created_at?: string | null
+          description?: string | null
+          entity_id: string
+          entity_type: string
+          id?: string
+          metadata?: Json | null
+          role: string
+          user_id: string
+        }
+        Update: {
+          action?: string
+          context?: string | null
+          created_at?: string | null
+          description?: string | null
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          metadata?: Json | null
+          role?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       businesses: {
         Row: {
           address: string | null
@@ -309,11 +348,15 @@ export type Database = {
           description: string | null
           due_date: string | null
           file_urls: string[] | null
+          finalised_at: string | null
+          finalised_by: string | null
           firm_id: string | null
           frequency: string | null
           id: string
           input_checklist: Json | null
           priority: string
+          shared_by: string | null
+          shared_with_client_at: string | null
           status: string
           title: string
           updated_at: string
@@ -328,11 +371,15 @@ export type Database = {
           description?: string | null
           due_date?: string | null
           file_urls?: string[] | null
+          finalised_at?: string | null
+          finalised_by?: string | null
           firm_id?: string | null
           frequency?: string | null
           id?: string
           input_checklist?: Json | null
           priority?: string
+          shared_by?: string | null
+          shared_with_client_at?: string | null
           status?: string
           title: string
           updated_at?: string
@@ -347,11 +394,15 @@ export type Database = {
           description?: string | null
           due_date?: string | null
           file_urls?: string[] | null
+          finalised_at?: string | null
+          finalised_by?: string | null
           firm_id?: string | null
           frequency?: string | null
           id?: string
           input_checklist?: Json | null
           priority?: string
+          shared_by?: string | null
+          shared_with_client_at?: string | null
           status?: string
           title?: string
           updated_at?: string
@@ -596,6 +647,45 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          created_at: string | null
+          entity_id: string
+          entity_type: string
+          id: string
+          message: string
+          read: boolean | null
+          recipient_id: string
+          sender_id: string | null
+          title: string
+          type: string
+        }
+        Insert: {
+          created_at?: string | null
+          entity_id: string
+          entity_type: string
+          id?: string
+          message: string
+          read?: boolean | null
+          recipient_id: string
+          sender_id?: string | null
+          title: string
+          type: string
+        }
+        Update: {
+          created_at?: string | null
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          message?: string
+          read?: boolean | null
+          recipient_id?: string
+          sender_id?: string | null
+          title?: string
+          type?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           business_id: string | null
@@ -670,6 +760,8 @@ export type Database = {
           created_at: string | null
           created_by: string
           file_url: string | null
+          finalised_at: string | null
+          finalised_by: string | null
           firm_id: string | null
           id: string
           notes: string | null
@@ -677,6 +769,8 @@ export type Database = {
           period_start: string | null
           report_data: Json | null
           report_type: string
+          shared_by: string | null
+          shared_with_client_at: string | null
           status: string | null
           title: string
           updated_at: string | null
@@ -689,6 +783,8 @@ export type Database = {
           created_at?: string | null
           created_by: string
           file_url?: string | null
+          finalised_at?: string | null
+          finalised_by?: string | null
           firm_id?: string | null
           id?: string
           notes?: string | null
@@ -696,6 +792,8 @@ export type Database = {
           period_start?: string | null
           report_data?: Json | null
           report_type: string
+          shared_by?: string | null
+          shared_with_client_at?: string | null
           status?: string | null
           title: string
           updated_at?: string | null
@@ -708,6 +806,8 @@ export type Database = {
           created_at?: string | null
           created_by?: string
           file_url?: string | null
+          finalised_at?: string | null
+          finalised_by?: string | null
           firm_id?: string | null
           id?: string
           notes?: string | null
@@ -715,6 +815,8 @@ export type Database = {
           period_start?: string | null
           report_data?: Json | null
           report_type?: string
+          shared_by?: string | null
+          shared_with_client_at?: string | null
           status?: string | null
           title?: string
           updated_at?: string | null
@@ -1355,6 +1457,27 @@ export type Database = {
       can_access_deliverable_thread: {
         Args: { thread_deliverable_id: string }
         Returns: boolean
+      }
+      create_audit_log: {
+        Args: {
+          p_entity_type: string
+          p_entity_id: string
+          p_action: string
+          p_description?: string
+          p_metadata?: Json
+        }
+        Returns: string
+      }
+      create_notification: {
+        Args: {
+          p_recipient_id: string
+          p_type: string
+          p_entity_type: string
+          p_entity_id: string
+          p_title: string
+          p_message: string
+        }
+        Returns: string
       }
       get_current_user_business_id: {
         Args: Record<PropertyKey, never>

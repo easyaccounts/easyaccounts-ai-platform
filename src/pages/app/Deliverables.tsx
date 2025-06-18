@@ -5,6 +5,7 @@ import { useClientContext } from '@/hooks/useClientContext';
 import { useSessionContext } from '@/hooks/useSessionContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Table,
   TableBody,
@@ -15,16 +16,20 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, FileUp, MessageSquare, CheckSquare } from 'lucide-react';
+import { Plus, FileUp, MessageSquare, CheckSquare, Eye, Activity } from 'lucide-react';
 import { toast } from 'sonner';
 import { Database } from '@/integrations/supabase/types';
 import AddEditDeliverableModal from '@/components/deliverables/AddEditDeliverableModal';
+import FinalisationBar from '@/components/finalisation/FinalisationBar';
+import AuditLogViewer from '@/components/audit/AuditLogViewer';
 import { useNavigate } from 'react-router-dom';
 import MessageButton from '@/components/messages/MessageButton';
 
 type Deliverable = Database['public']['Tables']['deliverables']['Row'] & {
   clients?: { name: string };
   assigned_user?: { first_name: string; last_name: string };
+  finalised_user?: { first_name: string; last_name: string };
+  shared_user?: { first_name: string; last_name: string };
 };
 
 const Deliverables = () => {
@@ -37,6 +42,7 @@ const Deliverables = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [modalOpen, setModalOpen] = useState(false);
   const [editingDeliverable, setEditingDeliverable] = useState<Deliverable | null>(null);
+  const [selectedDeliverable, setSelectedDeliverable] = useState<Deliverable | null>(null);
 
   const canManageDeliverables = ['partner', 'senior_staff'].includes(profile?.user_role || '');
   const canUploadData = ['partner', 'senior_staff', 'staff'].includes(profile?.user_role || '');
@@ -96,11 +102,27 @@ const Deliverables = () => {
         .select('id, first_name, last_name')
         .in('id', assignedIds);
 
+      // Fetch finalised user names separately
+      const finalisedIds = [...new Set(deliverablesData?.map(d => d.finalised_by).filter(Boolean) || [])];
+      const { data: finalisedUsers } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name')
+        .in('id', finalisedIds);
+
+      // Fetch shared user names separately
+      const sharedIds = [...new Set(deliverablesData?.map(d => d.shared_with_client).filter(Boolean) || [])];
+      const { data: sharedUsers } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name')
+        .in('id', sharedIds);
+
       // Combine data
       const enrichedDeliverables = deliverablesData?.map(deliverable => ({
         ...deliverable,
         clients: clients?.find(c => c.id === deliverable.client_id),
-        assigned_user: assignedUsers?.find(u => u.id === deliverable.assigned_to)
+        assigned_user: assignedUsers?.find(u => u.id === deliverable.assigned_to),
+        finalised_user: finalisedUsers?.find(u => u.id === deliverable.finalised_by),
+        shared_user: sharedUsers?.find(u => u.id === deliverable.shared_with_client)
       })) || [];
 
       setDeliverables(enrichedDeliverables);
@@ -147,6 +169,15 @@ const Deliverables = () => {
     }
   };
 
+  const handleViewDeliverable = (deliverable: Deliverable) => {
+    setSelectedDeliverable(deliverable);
+  };
+
+  const handleBackToList = () => {
+    setSelectedDeliverable(null);
+    fetchDeliverables(); // Refresh data
+  };
+
   const handleModalClose = () => {
     setModalOpen(false);
     setEditingDeliverable(null);
@@ -159,6 +190,8 @@ const Deliverables = () => {
       case 'data_received': return 'secondary';
       case 'in_progress': return 'default';
       case 'under_review': return 'outline';
+      case 'final': return 'default';
+      case 'shared_with_client': return 'default';
       case 'approved': return 'default';
       case 'delivered': return 'default';
       default: return 'secondary';
@@ -169,6 +202,112 @@ const Deliverables = () => {
     if (!dateString) return 'N/A';
     return new Date(dateString).toLocaleDateString();
   };
+
+  if (selectedDeliverable) {
+    return (
+      <div className="p-6 space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <Button
+              variant="outline"
+              onClick={handleBackToList}
+              className="mb-4"
+            >
+              ← Back to Deliverables
+            </Button>
+            <h1 className="text-3xl font-bold">{selectedDeliverable.title}</h1>
+            <p className="text-muted-foreground">
+              Deliverable Details and Management
+            </p>
+          </div>
+        </div>
+
+        <FinalisationBar
+          entityType="deliverable"
+          entity={selectedDeliverable}
+          onUpdate={handleBackToList}
+        />
+
+        <Tabs defaultValue="details" className="w-full">
+          <TabsList>
+            <TabsTrigger value="details">Details</TabsTrigger>
+            <TabsTrigger value="tasks">Tasks</TabsTrigger>
+            <TabsTrigger value="audit">
+              <Activity className="w-4 h-4 mr-2" />
+              Audit Trail
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="details" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Deliverable Information</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Type</label>
+                    <p className="text-sm">{selectedDeliverable.deliverable_type?.replace('_', ' ').toUpperCase()}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Status</label>
+                    <Badge variant={getStatusColor(selectedDeliverable.status)}>
+                      {selectedDeliverable.status.replace('_', ' ')}
+                    </Badge>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Due Date</label>
+                    <p className="text-sm">{formatDate(selectedDeliverable.due_date)}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Priority</label>
+                    <p className="text-sm">{selectedDeliverable.priority}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Frequency</label>
+                    <p className="text-sm">{selectedDeliverable.frequency}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Assigned To</label>
+                    <p className="text-sm">
+                      {selectedDeliverable.assigned_user 
+                        ? `${selectedDeliverable.assigned_user.first_name} ${selectedDeliverable.assigned_user.last_name}`
+                        : 'Unassigned'
+                      }
+                    </p>
+                  </div>
+                </div>
+                
+                {selectedDeliverable.description && (
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Description</label>
+                    <p className="text-sm mt-1">{selectedDeliverable.description}</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="tasks" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Tasks</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Button onClick={() => handleViewTasks(selectedDeliverable.id)}>
+                  View All Tasks
+                </Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="audit" className="space-y-6">
+            <AuditLogViewer entityType="deliverable" entityId={selectedDeliverable.id} />
+          </TabsContent>
+        </Tabs>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6">
@@ -204,8 +343,8 @@ const Deliverables = () => {
                 <SelectItem value="data_received">Data Received</SelectItem>
                 <SelectItem value="in_progress">In Progress</SelectItem>
                 <SelectItem value="under_review">Under Review</SelectItem>
-                <SelectItem value="approved">Approved</SelectItem>
-                <SelectItem value="delivered">Delivered</SelectItem>
+                <SelectItem value="final">Final</SelectItem>
+                <SelectItem value="shared_with_client">Shared with Client</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -263,6 +402,13 @@ const Deliverables = () => {
                     </TableCell>
                     <TableCell>
                       <div className="flex space-x-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleViewDeliverable(deliverable)}
+                        >
+                          <Eye className="w-4 h-4" />
+                        </Button>
                         <Button
                           variant="ghost"
                           size="sm"
