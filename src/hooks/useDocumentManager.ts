@@ -12,7 +12,8 @@ interface Document {
   file_size: number;
   file_url: string;
   uploaded_at: string;
-  status: string;
+  transaction_id: string;
+  uploaded_by: string;
 }
 
 export const useDocumentManager = () => {

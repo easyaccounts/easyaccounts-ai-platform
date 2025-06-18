@@ -75,7 +75,7 @@ export const useTeamManager = () => {
         .select(`
           *,
           clients(name),
-          profiles:team_member_id(first_name, last_name)
+          profiles!team_client_assignments_team_member_id_fkey(first_name, last_name)
         `)
         .order('created_at', { ascending: false });
       

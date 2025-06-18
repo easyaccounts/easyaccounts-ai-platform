@@ -51,6 +51,7 @@ export const useRequestManager = () => {
         .from('requests')
         .insert({
           ...requestData,
+          client_id: profile.business_id,
           business_id: profile.business_id,
           created_by: profile.id,
           status: 'open'
