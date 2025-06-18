@@ -30,22 +30,24 @@ const InviteTeamMemberModal = ({ isOpen, onClose }: InviteTeamMemberModalProps) 
     setLoading(true);
 
     try {
-      const { error } = await supabase.auth.inviteUserByEmail(formData.email, {
-        redirectTo: `${window.location.origin}/auth`,
-        data: {
+      // First create the user profile
+      const { error: insertError } = await supabase
+        .from('profiles')
+        .insert([{
+          email: formData.email,
           first_name: formData.first_name,
           last_name: formData.last_name,
           user_role: formData.user_role,
           user_group: 'business_owner',
           business_id: profile?.business_id,
-        }
-      });
+          status: 'pending',
+        }]);
 
-      if (error) throw error;
+      if (insertError) throw insertError;
 
       toast({
         title: 'Success',
-        description: 'Invitation sent successfully',
+        description: 'Team member invitation created successfully',
       });
 
       onClose();
@@ -120,7 +122,7 @@ const InviteTeamMemberModal = ({ isOpen, onClose }: InviteTeamMemberModalProps) 
               Cancel
             </Button>
             <Button type="submit" disabled={loading}>
-              {loading ? 'Sending...' : 'Send Invitation'}
+              {loading ? 'Creating...' : 'Create Invitation'}
             </Button>
           </div>
         </form>
