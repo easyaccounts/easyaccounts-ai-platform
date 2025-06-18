@@ -3,15 +3,20 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Users, UserPlus, Settings, Mail } from 'lucide-react';
+import { useTeamManager } from '@/hooks/useTeamManager';
 
 const TeamManagement = () => {
-  // Mock team data
-  const teamMembers = [
-    { id: '1', name: 'John Smith', role: 'Senior Accountant', email: 'john.smith@firm.com', status: 'Active' },
-    { id: '2', name: 'Sarah Johnson', role: 'Staff Accountant', email: 'sarah.johnson@firm.com', status: 'Active' },
-    { id: '3', name: 'Mike Brown', role: 'Senior Accountant', email: 'mike.brown@firm.com', status: 'Active' },
-    { id: '4', name: 'Lisa Davis', role: 'Partner', email: 'lisa.davis@firm.com', status: 'Active' },
-  ];
+  const { teamMembers, isLoading } = useTeamManager();
+
+  const getRoleStats = () => {
+    const partners = teamMembers.filter(m => m.user_role === 'partner').length;
+    const seniors = teamMembers.filter(m => m.user_role === 'senior_staff').length;
+    const staff = teamMembers.filter(m => m.user_role === 'staff').length;
+    
+    return { partners, seniors, staff };
+  };
+
+  const stats = getRoleStats();
 
   return (
     <div className="p-6 space-y-6">
@@ -47,9 +52,7 @@ const TeamManagement = () => {
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
-                {teamMembers.filter(m => m.role === 'Partner').length}
-              </div>
+              <div className="text-2xl font-bold">{stats.partners}</div>
             </CardContent>
           </Card>
 
@@ -59,9 +62,7 @@ const TeamManagement = () => {
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
-                {teamMembers.filter(m => m.role.includes('Senior')).length}
-              </div>
+              <div className="text-2xl font-bold">{stats.seniors}</div>
             </CardContent>
           </Card>
 
@@ -71,9 +72,7 @@ const TeamManagement = () => {
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
-                {teamMembers.filter(m => m.role === 'Staff Accountant').length}
-              </div>
+              <div className="text-2xl font-bold">{stats.staff}</div>
             </CardContent>
           </Card>
         </div>
@@ -85,38 +84,48 @@ const TeamManagement = () => {
             <CardDescription>Manage your team members and their permissions</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {teamMembers.map((member) => (
-                <div key={member.id} className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="flex items-center space-x-4">
-                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                      <span className="text-blue-600 font-medium">
-                        {member.name.split(' ').map(n => n[0]).join('')}
+            {isLoading ? (
+              <div className="text-center py-8">Loading team members...</div>
+            ) : teamMembers.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                No team members found.
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {teamMembers.map((member) => (
+                  <div key={member.id} className="flex items-center justify-between p-4 border rounded-lg">
+                    <div className="flex items-center space-x-4">
+                      <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                        <span className="text-blue-600 font-medium">
+                          {member.first_name?.[0]}{member.last_name?.[0]}
+                        </span>
+                      </div>
+                      <div>
+                        <p className="font-medium">{member.first_name} {member.last_name}</p>
+                        <p className="text-sm text-muted-foreground capitalize">
+                          {member.user_role.replace('_', ' ')}
+                        </p>
+                        <p className="text-xs text-muted-foreground flex items-center">
+                          <Mail className="w-3 h-3 mr-1" />
+                          {member.email}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <span className={`px-2 py-1 rounded text-xs ${
+                        member.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                      }`}>
+                        {member.status}
                       </span>
-                    </div>
-                    <div>
-                      <p className="font-medium">{member.name}</p>
-                      <p className="text-sm text-muted-foreground">{member.role}</p>
-                      <p className="text-xs text-muted-foreground flex items-center">
-                        <Mail className="w-3 h-3 mr-1" />
-                        {member.email}
-                      </p>
+                      <Button variant="outline" size="sm">
+                        <Settings className="w-3 h-3 mr-1" />
+                        Edit
+                      </Button>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <span className={`px-2 py-1 rounded text-xs ${
-                      member.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                    }`}>
-                      {member.status}
-                    </span>
-                    <Button variant="outline" size="sm">
-                      <Settings className="w-3 h-3 mr-1" />
-                      Edit
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
