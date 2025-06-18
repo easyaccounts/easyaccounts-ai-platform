@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserContext } from '@/hooks/useUserContext';
@@ -6,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { FileText, Upload, MessageSquare, Clock, CheckCircle, AlertCircle, Plus } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
+import { Link } from 'react-router-dom';
 
 // Sample data for client charts
 const deliverableProgressData = [
@@ -153,20 +153,24 @@ const ClientDashboardPage = () => {
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 md:grid-cols-2">
-            <Button className="h-auto flex flex-col items-center p-4 space-y-2">
-              <MessageSquare className="h-6 w-6" />
-              <div className="text-center">
-                <div className="font-medium">Request Document</div>
-                <div className="text-xs text-muted-foreground">Ask for specific information</div>
-              </div>
+            <Button asChild className="h-auto flex flex-col items-center p-4 space-y-2">
+              <Link to="/client/requests">
+                <MessageSquare className="h-6 w-6" />
+                <div className="text-center">
+                  <div className="font-medium">Request Document</div>
+                  <div className="text-xs text-muted-foreground">Ask for specific information</div>
+                </div>
+              </Link>
             </Button>
             
-            <Button variant="outline" className="h-auto flex flex-col items-center p-4 space-y-2">
-              <Upload className="h-6 w-6" />
-              <div className="text-center">
-                <div className="font-medium">Upload Files</div>
-                <div className="text-xs text-muted-foreground">Upload receipts and documents</div>
-              </div>
+            <Button asChild variant="outline" className="h-auto flex flex-col items-center p-4 space-y-2">
+              <Link to="/client/uploads">
+                <Upload className="h-6 w-6" />
+                <div className="text-center">
+                  <div className="font-medium">Upload Files</div>
+                  <div className="text-xs text-muted-foreground">Upload receipts and documents</div>
+                </div>
+              </Link>
             </Button>
           </div>
         </CardContent>

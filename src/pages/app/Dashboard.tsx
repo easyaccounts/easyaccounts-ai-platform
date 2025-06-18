@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserContext } from '@/hooks/useUserContext';
@@ -6,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { AlertTriangle, RefreshCw, Users, Building2, FileText, CheckCircle, Clock, Plus, UserPlus, UserCheck } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { Link, useNavigate } from 'react-router-dom';
 
 // Sample data for charts
 const clientRevenueData = [
@@ -26,6 +26,7 @@ const deliverableStatusData = [
 const Dashboard = () => {
   const { profile, loading: authLoading } = useAuth();
   const { currentView, loading: contextLoading } = useUserContext();
+  const navigate = useNavigate();
 
   console.log('App Dashboard rendering:', { 
     profile: profile ? { userGroup: profile.user_group, userRole: profile.user_role } : null,
@@ -210,28 +211,34 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="grid gap-4 md:grid-cols-3">
-              <Button className="h-auto flex flex-col items-center p-4 space-y-2">
-                <Plus className="h-6 w-6" />
-                <div className="text-center">
-                  <div className="font-medium">Add New Client</div>
-                  <div className="text-xs text-muted-foreground">Register a new client</div>
-                </div>
+              <Button asChild className="h-auto flex flex-col items-center p-4 space-y-2">
+                <Link to="/app/clients">
+                  <Plus className="h-6 w-6" />
+                  <div className="text-center">
+                    <div className="font-medium">Add New Client</div>
+                    <div className="text-xs text-muted-foreground">Register a new client</div>
+                  </div>
+                </Link>
               </Button>
               
-              <Button variant="outline" className="h-auto flex flex-col items-center p-4 space-y-2">
-                <UserCheck className="h-6 w-6" />
-                <div className="text-center">
-                  <div className="font-medium">Assign Client</div>
-                  <div className="text-xs text-muted-foreground">Assign clients to team members</div>
-                </div>
+              <Button asChild variant="outline" className="h-auto flex flex-col items-center p-4 space-y-2">
+                <Link to="/app/assign-clients">
+                  <UserCheck className="h-6 w-6" />
+                  <div className="text-center">
+                    <div className="font-medium">Assign Clients</div>
+                    <div className="text-xs text-muted-foreground">Assign clients to team members</div>
+                  </div>
+                </Link>
               </Button>
               
-              <Button variant="outline" className="h-auto flex flex-col items-center p-4 space-y-2">
-                <UserPlus className="h-6 w-6" />
-                <div className="text-center">
-                  <div className="font-medium">Add Team Member</div>
-                  <div className="text-xs text-muted-foreground">Invite new team member</div>
-                </div>
+              <Button asChild variant="outline" className="h-auto flex flex-col items-center p-4 space-y-2">
+                <Link to="/app/team">
+                  <UserPlus className="h-6 w-6" />
+                  <div className="text-center">
+                    <div className="font-medium">Manage Team</div>
+                    <div className="text-xs text-muted-foreground">Manage team members</div>
+                  </div>
+                </Link>
               </Button>
             </div>
           </CardContent>

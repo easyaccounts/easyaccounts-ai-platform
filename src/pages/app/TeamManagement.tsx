@@ -1,260 +1,125 @@
 
-import React, { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import React from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { UserPlus, Edit, UserX } from 'lucide-react';
-import { toast } from 'sonner';
-import AddEditUserModal from '@/components/team/AddEditUserModal';
-import { Database } from '@/integrations/supabase/types';
-
-type Profile = Database['public']['Tables']['profiles']['Row'];
-
-interface TeamMember extends Profile {
-  assigned_clients: Array<{ name: string }>;
-}
+import { Users, UserPlus, Settings, Mail } from 'lucide-react';
 
 const TeamManagement = () => {
-  const { profile } = useAuth();
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editingUser, setEditingUser] = useState<TeamMember | null>(null);
-
-  useEffect(() => {
-    if (profile?.user_role === 'partner' && profile?.firm_id) {
-      fetchTeamMembers();
-    }
-  }, [profile]);
-
-  const fetchTeamMembers = async () => {
-    try {
-      setLoading(true);
-      
-      // Fetch team members from the same firm
-      const { data: members, error } = await supabase
-        .from('profiles')
-        .select(`
-          id,
-          first_name,
-          last_name,
-          email,
-          phone,
-          user_role,
-          status,
-          user_group,
-          firm_id,
-          business_id,
-          firm_name,
-          business_name,
-          created_at,
-          updated_at
-        `)
-        .eq('firm_id', profile?.firm_id)
-        .neq('id', profile?.id); // Exclude current user
-
-      if (error) {
-        console.error('Error fetching team members:', error);
-        toast.error('Failed to fetch team members');
-        return;
-      }
-
-      // Fetch assigned clients for each team member
-      const membersWithClients = await Promise.all(
-        (members || []).map(async (member) => {
-          const { data: assignments } = await supabase
-            .from('user_assignments')
-            .select(`
-              client_id,
-              clients (name)
-            `)
-            .eq('user_id', member.id);
-
-          return {
-            ...member,
-            assigned_clients: assignments?.map(a => ({ name: a.clients?.name || '' })) || []
-          };
-        })
-      );
-
-      setTeamMembers(membersWithClients);
-    } catch (error) {
-      console.error('Error fetching team members:', error);
-      toast.error('Failed to fetch team members');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDeactivateUser = async (userId: string) => {
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ status: 'inactive' })
-        .eq('id', userId);
-
-      if (error) {
-        console.error('Error deactivating user:', error);
-        toast.error('Failed to deactivate user');
-        return;
-      }
-
-      toast.success('User deactivated successfully');
-      fetchTeamMembers();
-    } catch (error) {
-      console.error('Error deactivating user:', error);
-      toast.error('Failed to deactivate user');
-    }
-  };
-
-  const handleAddUser = () => {
-    setEditingUser(null);
-    setModalOpen(true);
-  };
-
-  const handleEditUser = (user: TeamMember) => {
-    setEditingUser(user);
-    setModalOpen(true);
-  };
-
-  const handleModalClose = () => {
-    setModalOpen(false);
-    setEditingUser(null);
-    fetchTeamMembers();
-  };
-
-  // Check if user has permission to access this page
-  if (profile?.user_role !== 'partner' || profile?.user_group !== 'accounting_firm') {
-    return (
-      <div className="p-6">
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-center text-muted-foreground">
-              You don't have permission to access team management.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  // Mock team data
+  const teamMembers = [
+    { id: '1', name: 'John Smith', role: 'Senior Accountant', email: 'john.smith@firm.com', status: 'Active' },
+    { id: '2', name: 'Sarah Johnson', role: 'Staff Accountant', email: 'sarah.johnson@firm.com', status: 'Active' },
+    { id: '3', name: 'Mike Brown', role: 'Senior Accountant', email: 'mike.brown@firm.com', status: 'Active' },
+    { id: '4', name: 'Lisa Davis', role: 'Partner', email: 'lisa.davis@firm.com', status: 'Active' },
+  ];
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Team Management</h1>
-          <p className="text-muted-foreground">Manage your firm's team members and assignments</p>
+          <h1 className="text-3xl font-bold">Team Management</h1>
+          <p className="text-muted-foreground">
+            Manage your accounting firm's team members
+          </p>
         </div>
-        <Button onClick={handleAddUser}>
+        <Button>
           <UserPlus className="w-4 h-4 mr-2" />
           Add Team Member
         </Button>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Team Members</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="text-center py-8">Loading team members...</div>
-          ) : teamMembers.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              No team members found. Add your first team member to get started.
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Phone</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Assigned Clients</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {teamMembers.map((member) => (
-                  <TableRow key={member.id}>
-                    <TableCell>
-                      {member.first_name} {member.last_name}
-                    </TableCell>
-                    <TableCell>{member.email}</TableCell>
-                    <TableCell>{member.phone || 'N/A'}</TableCell>
-                    <TableCell>
-                      <Badge variant="secondary">
-                        {member.user_role.replace('_', ' ')}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {member.assigned_clients.length > 0 ? (
-                        <div className="flex flex-wrap gap-1">
-                          {member.assigned_clients.slice(0, 2).map((client, idx) => (
-                            <Badge key={idx} variant="outline" className="text-xs">
-                              {client.name}
-                            </Badge>
-                          ))}
-                          {member.assigned_clients.length > 2 && (
-                            <Badge variant="outline" className="text-xs">
-                              +{member.assigned_clients.length - 2} more
-                            </Badge>
-                          )}
-                        </div>
-                      ) : (
-                        <span className="text-muted-foreground">No assignments</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={member.status === 'active' ? 'default' : 'destructive'}>
-                        {member.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex space-x-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleEditUser(member)}
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        {member.status === 'active' && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDeactivateUser(member.id)}
-                          >
-                            <UserX className="w-4 h-4" />
-                          </Button>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+      <div className="grid gap-6">
+        {/* Team Overview */}
+        <div className="grid gap-4 md:grid-cols-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Team Members</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{teamMembers.length}</div>
+            </CardContent>
+          </Card>
 
-      <AddEditUserModal
-        isOpen={modalOpen}
-        onClose={handleModalClose}
-        user={editingUser}
-        onUserUpdated={handleModalClose}
-      />
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Partners</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {teamMembers.filter(m => m.role === 'Partner').length}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Senior Staff</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {teamMembers.filter(m => m.role.includes('Senior')).length}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Staff</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {teamMembers.filter(m => m.role === 'Staff Accountant').length}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Team Members List */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Team Members</CardTitle>
+            <CardDescription>Manage your team members and their permissions</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {teamMembers.map((member) => (
+                <div key={member.id} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                      <span className="text-blue-600 font-medium">
+                        {member.name.split(' ').map(n => n[0]).join('')}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="font-medium">{member.name}</p>
+                      <p className="text-sm text-muted-foreground">{member.role}</p>
+                      <p className="text-xs text-muted-foreground flex items-center">
+                        <Mail className="w-3 h-3 mr-1" />
+                        {member.email}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className={`px-2 py-1 rounded text-xs ${
+                      member.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                    }`}>
+                      {member.status}
+                    </span>
+                    <Button variant="outline" size="sm">
+                      <Settings className="w-3 h-3 mr-1" />
+                      Edit
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };
