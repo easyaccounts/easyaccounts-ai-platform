@@ -22,6 +22,13 @@ import {
   Plus
 } from 'lucide-react';
 
+interface DashboardStats {
+  deliverablesPending: number;
+  uploadsCompleted: number;
+  tasksInProgress: number;
+  openRequests: number;
+}
+
 const ClientDashboard = () => {
   const { clientId } = useParams<{ clientId: string }>();
   const navigate = useNavigate();
@@ -55,7 +62,7 @@ const ClientDashboard = () => {
         .rpc('get_client_dashboard_stats', { p_client_id: clientId });
       
       if (error) throw error;
-      return data;
+      return data as DashboardStats;
     },
     enabled: !!clientId,
   });

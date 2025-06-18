@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -130,27 +131,34 @@ const AddEditUserModal = ({ isOpen, onClose, user, onUserUpdated }: AddEditUserM
         if (error) throw error;
         await updateUserAssignments(user.id);
       } else {
-        // Create invitation for new user
-        const redirectUrl = `${window.location.origin}/auth`;
+        // Create new team member profile directly
+        const newUserId = crypto.randomUUID();
         
-        const { error } = await supabase.auth.inviteUserByEmail(formData.email, {
-          redirectTo: redirectUrl,
-          data: {
+        const { error } = await supabase
+          .from('profiles')
+          .insert({
+            id: newUserId,
+            email: formData.email,
             first_name: formData.first_name,
             last_name: formData.last_name,
+            phone: formData.phone,
             user_role: formData.user_role,
-            user_group: 'accounting_firm',
+            user_group: 'accounting_firm' as const,
             firm_id: profile?.firm_id,
-            firm_name: profile?.firm_name
-          }
-        });
+            status: formData.status,
+          });
 
         if (error) throw error;
+        
+        // Create assignments for the new user
+        if (selectedClients.length > 0) {
+          await updateUserAssignments(newUserId);
+        }
       }
 
       toast({
         title: 'Success',
-        description: user ? 'User updated successfully' : 'Team member invitation sent successfully',
+        description: user ? 'User updated successfully' : 'Team member created successfully',
       });
 
       onUserUpdated();
@@ -205,7 +213,7 @@ const AddEditUserModal = ({ isOpen, onClose, user, onUserUpdated }: AddEditUserM
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{user ? 'Edit User' : 'Invite Team Member'}</DialogTitle>
+          <DialogTitle>{user ? 'Edit User' : 'Add Team Member'}</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -302,7 +310,7 @@ const AddEditUserModal = ({ isOpen, onClose, user, onUserUpdated }: AddEditUserM
               Cancel
             </Button>
             <Button type="submit" disabled={loading}>
-              {loading ? 'Saving...' : user ? 'Update User' : 'Send Invitation'}
+              {loading ? 'Saving...' : user ? 'Update User' : 'Add Team Member'}
             </Button>
           </div>
         </form>
