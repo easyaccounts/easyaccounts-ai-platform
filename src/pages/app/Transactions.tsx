@@ -87,8 +87,10 @@ const Transactions = () => {
       source: entryMode || 'manual'
     });
     setEntryMode(null);
-    // Explicitly return void to satisfy TypeScript
-    return;
+  };
+
+  const handleUpdateTransaction = async (data: { id: string } & Partial<any>): Promise<void> => {
+    await updateTransaction(data);
   };
 
   return (
@@ -204,7 +206,7 @@ const Transactions = () => {
                 <TransactionTable
                   transactions={transactions}
                   loading={loading}
-                  onUpdateTransaction={updateTransaction}
+                  onUpdateTransaction={handleUpdateTransaction}
                   cycle={cycle}
                 />
               </CardContent>
