@@ -14,10 +14,7 @@ interface AuditLog {
   description: string;
   metadata: any;
   created_at: string;
-  profiles?: {
-    first_name: string;
-    last_name: string;
-  };
+  user_name?: string;
 }
 
 interface UseAuditLogsProps {
@@ -38,10 +35,7 @@ export const useAuditLogs = ({ entityType, entityId, limit = 50 }: UseAuditLogsP
     queryFn: async () => {
       let query = supabase
         .from('audit_logs')
-        .select(`
-          *,
-          profiles:user_id(first_name, last_name)
-        `)
+        .select('*')
         .order('created_at', { ascending: false })
         .limit(limit);
 
@@ -58,6 +52,25 @@ export const useAuditLogs = ({ entityType, entityId, limit = 50 }: UseAuditLogsP
       if (error) {
         console.error('Error fetching audit logs:', error);
         throw error;
+      }
+
+      // Manually fetch user profiles for the audit logs
+      if (data && data.length > 0) {
+        const userIds = [...new Set(data.map(log => log.user_id))];
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, first_name, last_name')
+          .in('id', userIds);
+
+        // Enrich audit logs with user names
+        const enrichedData = data.map(log => ({
+          ...log,
+          user_name: profiles?.find(p => p.id === log.user_id)
+            ? `${profiles.find(p => p.id === log.user_id)?.first_name} ${profiles.find(p => p.id === log.user_id)?.last_name}`
+            : 'Unknown User'
+        }));
+
+        return enrichedData as AuditLog[];
       }
 
       return data as AuditLog[];

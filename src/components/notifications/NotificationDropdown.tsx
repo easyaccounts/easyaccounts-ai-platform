@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
-import { Bell, Check, CheckCheck } from 'lucide-react';
+import { Bell, CheckCheck } from 'lucide-react';
 import { useNotifications } from '@/hooks/useNotifications';
 import { format } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
@@ -130,9 +130,9 @@ const NotificationDropdown = () => {
                   <p className="text-xs text-muted-foreground mt-1">
                     {format(new Date(notification.created_at), 'MMM dd, HH:mm')}
                   </p>
-                  {notification.profiles && (
+                  {notification.sender_name && (
                     <p className="text-xs text-muted-foreground">
-                      From: {notification.profiles.first_name} {notification.profiles.last_name}
+                      From: {notification.sender_name}
                     </p>
                   )}
                 </div>

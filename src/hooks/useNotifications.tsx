@@ -16,10 +16,7 @@ interface Notification {
   message: string;
   read: boolean;
   created_at: string;
-  profiles?: {
-    first_name: string;
-    last_name: string;
-  };
+  sender_name?: string;
 }
 
 export const useNotifications = () => {
@@ -35,10 +32,7 @@ export const useNotifications = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('notifications')
-        .select(`
-          *,
-          profiles:sender_id(first_name, last_name)
-        `)
+        .select('*')
         .eq('recipient_id', profile?.id)
         .order('created_at', { ascending: false })
         .limit(50);
@@ -46,6 +40,25 @@ export const useNotifications = () => {
       if (error) {
         console.error('Error fetching notifications:', error);
         throw error;
+      }
+
+      // Manually fetch sender profiles for the notifications
+      if (data && data.length > 0) {
+        const senderIds = [...new Set(data.map(notif => notif.sender_id).filter(Boolean))];
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, first_name, last_name')
+          .in('id', senderIds);
+
+        // Enrich notifications with sender names
+        const enrichedData = data.map(notif => ({
+          ...notif,
+          sender_name: notif.sender_id && profiles?.find(p => p.id === notif.sender_id)
+            ? `${profiles.find(p => p.id === notif.sender_id)?.first_name} ${profiles.find(p => p.id === notif.sender_id)?.last_name}`
+            : undefined
+        }));
+
+        return enrichedData as Notification[];
       }
 
       return data as Notification[];
