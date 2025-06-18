@@ -16,6 +16,7 @@ interface DashboardData {
   pendingTasks?: number;
   completedTasks?: number;
   documentsToReview?: number;
+  activeClients?: number;
   deliverablesPending?: number;
   uploadsCompleted?: number;
   tasksInProgress?: number;
@@ -38,7 +39,7 @@ export const useDashboardData = (role: string) => {
             { p_firm_id: profile.firm_id }
           );
           if (partnerError) throw partnerError;
-          return partnerData || {};
+          return partnerData as DashboardData || {};
 
         case 'senior_staff':
           if (!profile.firm_id) throw new Error('No firm ID available');
@@ -47,7 +48,7 @@ export const useDashboardData = (role: string) => {
             { p_user_id: profile.id, p_firm_id: profile.firm_id }
           );
           if (seniorError) throw seniorError;
-          return seniorData || {};
+          return seniorData as DashboardData || {};
 
         case 'staff':
           const { data: staffData, error: staffError } = await supabase.rpc(
@@ -55,7 +56,7 @@ export const useDashboardData = (role: string) => {
             { p_user_id: profile.id }
           );
           if (staffError) throw staffError;
-          return staffData || {};
+          return staffData as DashboardData || {};
 
         case 'client':
           if (!profile.business_id) throw new Error('No business ID available');
@@ -64,7 +65,7 @@ export const useDashboardData = (role: string) => {
             { p_client_id: profile.business_id }
           );
           if (clientError) throw clientError;
-          return clientData || {};
+          return clientData as DashboardData || {};
 
         default:
           throw new Error(`Unknown role: ${role}`);
