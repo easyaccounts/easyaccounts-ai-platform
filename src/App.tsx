@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -20,6 +21,7 @@ import DeliverableMessages from "./pages/app/DeliverableMessages";
 import MyTasks from "./pages/app/MyTasks";
 import Reports from "./pages/app/Reports";
 import Requests from "./pages/app/Requests";
+import Transactions from "./pages/app/Transactions";
 import NotFound from "./pages/NotFound";
 import "./App.css";
 
@@ -53,6 +55,7 @@ function App() {
                     <Route path="my-tasks" element={<MyTasks />} />
                     <Route path="reports" element={<Reports />} />
                     <Route path="requests" element={<Requests />} />
+                    <Route path="transactions" element={<Transactions />} />
                   </Route>
                   <Route path="/404" element={<NotFound />} />
                   <Route path="*" element={<Navigate to="/404" replace />} />

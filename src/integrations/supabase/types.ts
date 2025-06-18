@@ -1069,6 +1069,135 @@ export type Database = {
           },
         ]
       }
+      transaction_comments: {
+        Row: {
+          comment: string
+          created_at: string | null
+          id: string
+          transaction_id: string
+          user_id: string
+        }
+        Insert: {
+          comment: string
+          created_at?: string | null
+          id?: string
+          transaction_id: string
+          user_id: string
+        }
+        Update: {
+          comment?: string
+          created_at?: string | null
+          id?: string
+          transaction_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transaction_comments_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transaction_comments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transaction_documents: {
+        Row: {
+          file_name: string
+          file_size: number | null
+          file_type: string | null
+          file_url: string
+          id: string
+          transaction_id: string
+          uploaded_at: string | null
+          uploaded_by: string
+        }
+        Insert: {
+          file_name: string
+          file_size?: number | null
+          file_type?: string | null
+          file_url: string
+          id?: string
+          transaction_id: string
+          uploaded_at?: string | null
+          uploaded_by: string
+        }
+        Update: {
+          file_name?: string
+          file_size?: number | null
+          file_type?: string | null
+          file_url?: string
+          id?: string
+          transaction_id?: string
+          uploaded_at?: string | null
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transaction_documents_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transaction_documents_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transaction_review_log: {
+        Row: {
+          action: string
+          comment: string | null
+          created_at: string | null
+          id: string
+          reviewer_id: string
+          transaction_id: string
+        }
+        Insert: {
+          action: string
+          comment?: string | null
+          created_at?: string | null
+          id?: string
+          reviewer_id: string
+          transaction_id: string
+        }
+        Update: {
+          action?: string
+          comment?: string | null
+          created_at?: string | null
+          id?: string
+          reviewer_id?: string
+          transaction_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transaction_review_log_reviewer_id_fkey"
+            columns: ["reviewer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transaction_review_log_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       transactions: {
         Row: {
           amount: number
@@ -1077,10 +1206,16 @@ export type Database = {
           client_id: string | null
           created_at: string
           created_by: string
-          description: string
+          cycle: string | null
+          deliverable_id: string | null
+          document_url: string | null
           firm_id: string | null
           id: string
+          lines: Json | null
+          narration: string
           reference_number: string | null
+          source: string | null
+          status: string | null
           transaction_date: string
           updated_at: string
         }
@@ -1091,10 +1226,16 @@ export type Database = {
           client_id?: string | null
           created_at?: string
           created_by: string
-          description: string
+          cycle?: string | null
+          deliverable_id?: string | null
+          document_url?: string | null
           firm_id?: string | null
           id?: string
+          lines?: Json | null
+          narration: string
           reference_number?: string | null
+          source?: string | null
+          status?: string | null
           transaction_date: string
           updated_at?: string
         }
@@ -1105,10 +1246,16 @@ export type Database = {
           client_id?: string | null
           created_at?: string
           created_by?: string
-          description?: string
+          cycle?: string | null
+          deliverable_id?: string | null
+          document_url?: string | null
           firm_id?: string | null
           id?: string
+          lines?: Json | null
+          narration?: string
           reference_number?: string | null
+          source?: string | null
+          status?: string | null
           transaction_date?: string
           updated_at?: string
         }
@@ -1125,6 +1272,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_deliverable_id_fkey"
+            columns: ["deliverable_id"]
+            isOneToOne: false
+            referencedRelation: "deliverables"
             referencedColumns: ["id"]
           },
           {
