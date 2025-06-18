@@ -15,6 +15,8 @@ const RouteGuard = ({ children }: RouteGuardProps) => {
   const [isChecking, setIsChecking] = useState(true);
 
   const getRoleDashboard = (userGroup: string, userRole: string) => {
+    console.log('Determining dashboard for:', { userGroup, userRole });
+    
     // Business owners (client group) go to client dashboard
     if (userGroup === 'business_owner') {
       return '/client/dashboard';
@@ -43,6 +45,15 @@ const RouteGuard = ({ children }: RouteGuardProps) => {
       const isPublicPath = ['/', '/landing', '/auth'].includes(currentPath);
       const isAppPath = currentPath.startsWith('/app');
       const isClientPath = currentPath.startsWith('/client');
+
+      console.log('RouteGuard check:', { 
+        currentPath, 
+        isPublicPath, 
+        isAppPath, 
+        isClientPath, 
+        user: !!user, 
+        profile: profile ? { userGroup: profile.user_group, userRole: profile.user_role } : null 
+      });
 
       // User is not authenticated
       if (!user || !profile) {

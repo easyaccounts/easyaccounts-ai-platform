@@ -6,7 +6,15 @@ import { useUserContext } from '@/hooks/useUserContext';
 
 const ClientDashboard = () => {
   const { profile } = useAuth();
-  const { userGroup, userRole } = useUserContext();
+  const { userGroup, userRole, selectedClient, currentClientId } = useUserContext();
+
+  console.log('Client Dashboard rendering:', { 
+    profile: profile ? { userGroup: profile.user_group, userRole: profile.user_role } : null,
+    contextUserGroup: userGroup,
+    contextUserRole: userRole,
+    selectedClient,
+    currentClientId
+  });
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -16,6 +24,11 @@ const ClientDashboard = () => {
           <p className="text-muted-foreground">
             Welcome back, {profile?.first_name}! Manage your business accounting here.
           </p>
+          {selectedClient && (
+            <p className="text-sm text-blue-600 mt-1">
+              Viewing: {selectedClient.name}
+            </p>
+          )}
         </div>
       </div>
 
@@ -60,8 +73,9 @@ const ClientDashboard = () => {
           <div className="space-y-2">
             <p><strong>Name:</strong> {profile?.first_name} {profile?.last_name}</p>
             <p><strong>Email:</strong> {profile?.email}</p>
-            <p><strong>User Group:</strong> {userGroup}</p>
-            <p><strong>Role:</strong> {userRole}</p>
+            <p><strong>User Group:</strong> {userGroup || profile?.user_group}</p>
+            <p><strong>Role:</strong> {userRole || profile?.user_role}</p>
+            {currentClientId && <p><strong>Current Client ID:</strong> {currentClientId}</p>}
           </div>
         </CardContent>
       </Card>

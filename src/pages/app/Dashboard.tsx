@@ -7,9 +7,15 @@ import ClientDashboard from '@/components/client/ClientDashboard';
 
 const Dashboard = () => {
   const { profile } = useAuth();
-  const { currentView } = useUserContext();
+  const { currentView, loading } = useUserContext();
 
-  if (!profile) {
+  console.log('App Dashboard rendering:', { 
+    profile: profile ? { userGroup: profile.user_group, userRole: profile.user_role } : null,
+    currentView,
+    loading 
+  });
+
+  if (!profile || loading) {
     return <div>Loading...</div>;
   }
 
