@@ -3,6 +3,7 @@ import { useState, useEffect, createContext, useContext, ReactNode } from 'react
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
+import { TIME, UI_MESSAGES } from '@/utils/constants';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 
@@ -26,7 +27,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('Auth state change:', event, session?.user?.email);
+        if (import.meta.env.DEV) {
+          console.log('Auth state change:', event, session?.user?.email);
+        }
         setSession(session);
         setUser(session?.user ?? null);
         
@@ -44,7 +47,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     // Check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log('Initial session check:', session?.user?.email);
+      if (import.meta.env.DEV) {
+        console.log('Initial session check:', session?.user?.email);
+      }
       setSession(session);
       setUser(session?.user ?? null);
       
@@ -62,7 +67,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchUserProfile = async (userId: string) => {
     try {
-      console.log('Fetching profile for user:', userId);
+      if (import.meta.env.DEV) {
+        console.log('Fetching profile for user:', userId);
+      }
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -73,11 +80,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         console.error('Error fetching profile:', error);
         setProfile(null);
       } else {
-        console.log('Profile fetched successfully:', { 
-          userGroup: data?.user_group, 
-          userRole: data?.user_role,
-          firstName: data?.first_name 
-        });
+        if (import.meta.env.DEV) {
+          console.log('Profile fetched successfully:', { 
+            userGroup: data?.user_group, 
+            userRole: data?.user_role,
+            firstName: data?.first_name 
+          });
+        }
         setProfile(data);
       }
     } catch (error) {
@@ -97,22 +106,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setSession(null);
       setProfile(null);
       
-      // Security: Clear all auth-related localStorage items
-      Object.keys(localStorage).forEach((key) => {
-        if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
-          localStorage.removeItem(key);
-        }
-      });
-      
       const { error } = await supabase.auth.signOut({ scope: 'global' });
       if (error) {
         console.error('Error signing out:', error);
       } else {
-        console.log('User signed out successfully');
+        if (import.meta.env.DEV) {
+          console.log('User signed out successfully');
+        }
         // Security: Force page reload for complete cleanup
         setTimeout(() => {
           window.location.href = '/';
-        }, 100);
+        }, TIME.REDIRECT_DELAY);
       }
     } catch (error) {
       console.error('Unexpected error during sign out:', error);

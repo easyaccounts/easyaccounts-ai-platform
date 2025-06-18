@@ -2,7 +2,12 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { toast } from 'sonner';
+import { useToast } from '@/hooks/use-toast';
+import { Database } from '@/integrations/supabase/types';
+import { UI_MESSAGES, USER_GROUPS } from '@/utils/constants';
+
+type Profile = Database['public']['Tables']['profiles']['Row'];
+type Client = Database['public']['Tables']['clients']['Row'];
 
 interface TeamMember {
   id: string;
@@ -14,11 +19,6 @@ interface TeamMember {
   created_at: string;
 }
 
-interface Client {
-  id: string;
-  name: string;
-}
-
 interface ClientAssignment {
   id: string;
   client_id: string;
@@ -27,8 +27,24 @@ interface ClientAssignment {
   profiles: { first_name: string; last_name: string };
 }
 
+interface CreateTeamMemberData {
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone?: string;
+  user_role: 'senior_staff' | 'staff';
+  status: 'active' | 'inactive';
+  firm_id: string;
+  selectedClients?: string[];
+}
+
+interface UpdateTeamMemberData extends Partial<Omit<CreateTeamMemberData, 'email' | 'firm_id'>> {
+  id: string;
+}
+
 export const useTeamManager = () => {
   const { profile } = useAuth();
+  const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const { data: teamMembers = [], isLoading: loadingTeam } = useQuery({
@@ -85,6 +101,122 @@ export const useTeamManager = () => {
     enabled: !!profile?.firm_id,
   });
 
+  // Mutation for creating team members
+  const createTeamMemberMutation = useMutation({
+    mutationFn: async ({ selectedClients = [], ...memberData }: CreateTeamMemberData) => {
+      const newUserId = crypto.randomUUID();
+      
+      const { error } = await supabase
+        .from('profiles')
+        .insert({
+          id: newUserId,
+          email: memberData.email,
+          first_name: memberData.first_name,
+          last_name: memberData.last_name,
+          phone: memberData.phone,
+          user_role: memberData.user_role,
+          user_group: USER_GROUPS.ACCOUNTING_FIRM as const,
+          firm_id: memberData.firm_id,
+          status: memberData.status,
+        });
+
+      if (error) throw error;
+      
+      // Create assignments for the new user
+      if (selectedClients.length > 0) {
+        const assignments = selectedClients.map(clientId => ({
+          user_id: newUserId,
+          client_id: clientId,
+          assigned_by: profile?.id,
+        }));
+
+        const { error: assignmentError } = await supabase
+          .from('user_assignments')
+          .insert(assignments);
+
+        if (assignmentError) throw assignmentError;
+      }
+
+      return newUserId;
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Success',
+        description: 'Team member created successfully',
+      });
+      queryClient.invalidateQueries({ queryKey: ['team-members'] });
+      queryClient.invalidateQueries({ queryKey: ['client-assignments'] });
+    },
+    onError: (error: any) => {
+      console.error('Error creating team member:', error);
+      toast({
+        title: 'Error',
+        description: error.message || UI_MESSAGES.ERROR_GENERIC,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // Mutation for updating team members
+  const updateTeamMemberMutation = useMutation({
+    mutationFn: async ({ id, selectedClients = [], ...memberData }: UpdateTeamMemberData & { selectedClients?: string[] }) => {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          first_name: memberData.first_name,
+          last_name: memberData.last_name,
+          phone: memberData.phone,
+          user_role: memberData.user_role,
+          status: memberData.status,
+        })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      // Update assignments
+      // Delete existing assignments
+      const { error: deleteError } = await supabase
+        .from('user_assignments')
+        .delete()
+        .eq('user_id', id);
+
+      if (deleteError) throw deleteError;
+
+      // Insert new assignments
+      if (selectedClients.length > 0) {
+        const assignments = selectedClients.map(clientId => ({
+          user_id: id,
+          client_id: clientId,
+          assigned_by: profile?.id,
+        }));
+
+        const { error: assignmentError } = await supabase
+          .from('user_assignments')
+          .insert(assignments);
+
+        if (assignmentError) throw assignmentError;
+      }
+
+      return id;
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Success',
+        description: UI_MESSAGES.SUCCESS_UPDATED,
+      });
+      queryClient.invalidateQueries({ queryKey: ['team-members'] });
+      queryClient.invalidateQueries({ queryKey: ['client-assignments'] });
+    },
+    onError: (error: any) => {
+      console.error('Error updating team member:', error);
+      toast({
+        title: 'Error',
+        description: error.message || UI_MESSAGES.ERROR_GENERIC,
+        variant: 'destructive',
+      });
+    },
+  });
+
   const assignClientMutation = useMutation({
     mutationFn: async ({ clientId, teamMemberId }: { clientId: string; teamMemberId: string }) => {
       const { data, error } = await supabase
@@ -101,12 +233,19 @@ export const useTeamManager = () => {
       return data;
     },
     onSuccess: () => {
-      toast.success('Client assigned successfully');
+      toast({
+        title: 'Success',
+        description: 'Client assigned successfully',
+      });
       queryClient.invalidateQueries({ queryKey: ['client-assignments'] });
     },
     onError: (error) => {
       console.error('Assignment error:', error);
-      toast.error('Failed to assign client');
+      toast({
+        title: 'Error',
+        description: 'Failed to assign client',
+        variant: 'destructive',
+      });
     },
   });
 
@@ -119,7 +258,11 @@ export const useTeamManager = () => {
     clients,
     assignments,
     isLoading: loadingTeam || loadingClients || loadingAssignments,
+    createTeamMember: createTeamMemberMutation.mutate,
+    updateTeamMember: updateTeamMemberMutation.mutate,
     assignClient: assignClientMutation.mutate,
+    isCreating: createTeamMemberMutation.isPending,
+    isUpdating: updateTeamMemberMutation.isPending,
     isAssigning: assignClientMutation.isPending,
     refreshTeamMembers
   };

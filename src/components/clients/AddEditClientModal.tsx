@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -7,10 +6,10 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
 import { useUserContext } from '@/hooks/useUserContext';
+import { useClientManager } from '@/hooks/useClientManager';
 import { Database } from '@/integrations/supabase/types';
+import { UI_MESSAGES } from '@/utils/constants';
 
 type Client = Database['public']['Tables']['clients']['Row'];
 
@@ -42,8 +41,8 @@ interface FormData {
 
 const AddEditClientModal = ({ isOpen, onClose, client, onClientSaved }: AddEditClientModalProps) => {
   const { toast } = useToast();
-  const { profile } = useAuth();
   const { firmId } = useUserContext();
+  const { createClient, updateClient, isCreating, isUpdating } = useClientManager();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     name: '',
@@ -70,7 +69,7 @@ const AddEditClientModal = ({ isOpen, onClose, client, onClientSaved }: AddEditC
       if (!firmId && !client) {
         toast({
           title: 'Error',
-          description: 'Unable to detect your firm — please refresh or contact support.',
+          description: UI_MESSAGES.ERROR_FIRM_DETECTION,
           variant: 'destructive',
         });
         onClose();
@@ -100,7 +99,7 @@ const AddEditClientModal = ({ isOpen, onClose, client, onClientSaved }: AddEditC
         resetForm();
       }
     }
-  }, [isOpen, client, firmId]);
+  }, [isOpen, client, firmId, toast, onClose]);
 
   const resetForm = () => {
     setFormData({
@@ -125,58 +124,45 @@ const AddEditClientModal = ({ isOpen, onClose, client, onClientSaved }: AddEditC
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
 
     try {
       const clientData = {
         name: formData.name,
-        email: formData.email || null,
-        phone: formData.phone || null,
-        address: formData.address || null,
-        city: formData.city || null,
-        state: formData.state || null,
-        postal_code: formData.postal_code || null,
-        country: formData.country || null,
-        gstin: formData.gstin || null,
-        gst_number: formData.gst_number || null,
-        pan_number: formData.pan_number || null,
-        business_type: formData.business_type || null,
-        industry: formData.industry || null,
-        monthly_fee: formData.monthly_fee ? parseFloat(formData.monthly_fee) : null,
+        email: formData.email || undefined,
+        phone: formData.phone || undefined,
+        address: formData.address || undefined,
+        city: formData.city || undefined,
+        state: formData.state || undefined,
+        postal_code: formData.postal_code || undefined,
+        country: formData.country || undefined,
+        gstin: formData.gstin || undefined,
+        gst_number: formData.gst_number || undefined,
+        pan_number: formData.pan_number || undefined,
+        business_type: formData.business_type || undefined,
+        industry: formData.industry || undefined,
+        monthly_fee: formData.monthly_fee ? parseFloat(formData.monthly_fee) : undefined,
         billing_cycle: formData.billing_cycle,
         status: formData.status,
-        created_by: profile?.id,
       };
 
       if (client) {
         // Update existing client
-        const { error } = await supabase
-          .from('clients')
-          .update(clientData)
-          .eq('id', client.id);
-
-        if (error) throw error;
+        await updateClient({
+          id: client.id,
+          ...clientData,
+        });
       } else {
         // Validate firmId before creating new client
         if (!firmId) {
-          throw new Error('Unable to detect your firm — please refresh or contact support.');
+          throw new Error(UI_MESSAGES.ERROR_FIRM_DETECTION);
         }
 
         // Create new client with firm association
-        const { error } = await supabase
-          .from('clients')
-          .insert({
-            ...clientData,
-            firm_id: firmId,
-          });
-
-        if (error) throw error;
+        await createClient({
+          ...clientData,
+          firm_id: firmId,
+        });
       }
-
-      toast({
-        title: 'Success',
-        description: client ? 'Client updated successfully' : 'Client created successfully',
-      });
 
       onClientSaved();
       onClose();
@@ -185,11 +171,9 @@ const AddEditClientModal = ({ isOpen, onClose, client, onClientSaved }: AddEditC
       console.error('Error saving client:', error);
       toast({
         title: 'Error',
-        description: error.message || 'Failed to save client',
+        description: error.message || UI_MESSAGES.ERROR_GENERIC,
         variant: 'destructive',
       });
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -406,7 +390,7 @@ const AddEditClientModal = ({ isOpen, onClose, client, onClientSaved }: AddEditC
               Cancel
             </Button>
             <Button type="submit" disabled={loading}>
-              {loading ? 'Saving...' : client ? 'Update Client' : 'Add Client'}
+              {loading ? UI_MESSAGES.SAVING : client ? 'Update Client' : 'Add Client'}
             </Button>
           </div>
         </form>
