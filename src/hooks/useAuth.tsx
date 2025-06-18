@@ -31,7 +31,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Fetch user profile with setTimeout to prevent deadlock
+          // Security: Defer profile fetching to prevent deadlocks
           setTimeout(() => {
             fetchUserProfile(session.user.id);
           }, 0);
@@ -88,16 +88,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  // Security: Enhanced sign out with proper cleanup
   const signOut = async () => {
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signOut();
+      // Security: Clear auth state first
+      setUser(null);
+      setSession(null);
+      setProfile(null);
+      
+      // Security: Clear all auth-related localStorage items
+      Object.keys(localStorage).forEach((key) => {
+        if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+          localStorage.removeItem(key);
+        }
+      });
+      
+      const { error } = await supabase.auth.signOut({ scope: 'global' });
       if (error) {
         console.error('Error signing out:', error);
       } else {
         console.log('User signed out successfully');
-        // State will be cleared by onAuthStateChange
-        // Redirect will be handled by RouteGuard
+        // Security: Force page reload for complete cleanup
+        setTimeout(() => {
+          window.location.href = '/';
+        }, 100);
       }
     } catch (error) {
       console.error('Unexpected error during sign out:', error);

@@ -29,6 +29,36 @@ interface FormData {
   status: 'active' | 'inactive';
 }
 
+// Security: Input validation functions
+const validateEmail = (email: string): boolean => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+};
+
+const validatePhone = (phone: string): boolean => {
+  const phoneRegex = /^[\+]?[0-9\s\-\(\)]{10,15}$/;
+  return phone === '' || phoneRegex.test(phone);
+};
+
+const validateName = (name: string): boolean => {
+  const nameRegex = /^[a-zA-Z\s\-']{2,50}$/;
+  return nameRegex.test(name);
+};
+
+const sanitizeInput = (input: string): string => {
+  return input.trim().replace(/[<>]/g, '');
+};
+
+// Security: Generate secure random password
+const generateSecurePassword = (): string => {
+  const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
+  let password = '';
+  for (let i = 0; i < 16; i++) {
+    password += charset.charAt(Math.floor(Math.random() * charset.length));
+  }
+  return password;
+};
+
 const AddEditUserModal = ({ isOpen, onClose, user, onUserUpdated }: AddEditUserModalProps) => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
@@ -42,6 +72,7 @@ const AddEditUserModal = ({ isOpen, onClose, user, onUserUpdated }: AddEditUserM
   });
   const [clients, setClients] = useState<Client[]>([]);
   const [selectedClients, setSelectedClients] = useState<string[]>([]);
+  const [formErrors, setFormErrors] = useState<Partial<FormData>>({});
 
   useEffect(() => {
     if (isOpen) {
@@ -72,36 +103,86 @@ const AddEditUserModal = ({ isOpen, onClose, user, onUserUpdated }: AddEditUserM
       status: 'active',
     });
     setSelectedClients([]);
+    setFormErrors({});
   };
 
   const fetchClients = async () => {
-    const { data, error } = await supabase
-      .from('clients')
-      .select('*')
-      .order('name');
+    try {
+      const { data, error } = await supabase
+        .from('clients')
+        .select('*')
+        .order('name');
 
-    if (error) {
-      console.error('Error fetching clients:', error);
-    } else {
-      setClients(data || []);
+      if (error) {
+        console.error('Error fetching clients:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to fetch clients. Please try again.',
+          variant: 'destructive',
+        });
+      } else {
+        setClients(data || []);
+      }
+    } catch (error) {
+      console.error('Unexpected error fetching clients:', error);
+      toast({
+        title: 'Error',
+        description: 'An unexpected error occurred.',
+        variant: 'destructive',
+      });
     }
   };
 
   const fetchUserAssignments = async (userId: string) => {
-    const { data, error } = await supabase
-      .from('user_assignments')
-      .select('client_id')
-      .eq('user_id', userId);
+    try {
+      const { data, error } = await supabase
+        .from('user_assignments')
+        .select('client_id')
+        .eq('user_id', userId);
 
-    if (error) {
-      console.error('Error fetching user assignments:', error);
-    } else {
-      setSelectedClients(data?.map(assignment => assignment.client_id) || []);
+      if (error) {
+        console.error('Error fetching user assignments:', error);
+      } else {
+        setSelectedClients(data?.map(assignment => assignment.client_id) || []);
+      }
+    } catch (error) {
+      console.error('Unexpected error fetching user assignments:', error);
     }
   };
 
+  // Security: Comprehensive input validation
+  const validateForm = (): boolean => {
+    const errors: Partial<FormData> = {};
+
+    if (!validateName(formData.first_name)) {
+      errors.first_name = 'First name must be 2-50 characters, letters only';
+    }
+
+    if (!validateName(formData.last_name)) {
+      errors.last_name = 'Last name must be 2-50 characters, letters only';
+    }
+
+    if (!validateEmail(formData.email)) {
+      errors.email = 'Please enter a valid email address';
+    }
+
+    if (formData.phone && !validatePhone(formData.phone)) {
+      errors.phone = 'Please enter a valid phone number';
+    }
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleInputChange = (field: keyof FormData, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    // Security: Sanitize input
+    const sanitizedValue = sanitizeInput(value);
+    setFormData(prev => ({ ...prev, [field]: sanitizedValue }));
+    
+    // Clear field error when user starts typing
+    if (formErrors[field]) {
+      setFormErrors(prev => ({ ...prev, [field]: undefined }));
+    }
   };
 
   const handleClientToggle = (clientId: string, checked: boolean) => {
@@ -114,6 +195,17 @@ const AddEditUserModal = ({ isOpen, onClose, user, onUserUpdated }: AddEditUserM
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Security: Validate form before submission
+    if (!validateForm()) {
+      toast({
+        title: 'Validation Error',
+        description: 'Please fix the errors in the form.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -140,10 +232,12 @@ const AddEditUserModal = ({ isOpen, onClose, user, onUserUpdated }: AddEditUserM
           description: 'User updated successfully.',
         });
       } else {
-        // Create new user
+        // Security: Generate secure random password instead of hardcoded one
+        const securePassword = generateSecurePassword();
+        
         const { data: authData, error: authError } = await supabase.auth.signUp({
           email: formData.email,
-          password: 'TempPassword123!', // Temporary password
+          password: securePassword,
           options: {
             data: {
               first_name: formData.first_name,
@@ -180,11 +274,11 @@ const AddEditUserModal = ({ isOpen, onClose, user, onUserUpdated }: AddEditUserM
       onUserUpdated();
       onClose();
       resetForm();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving user:', error);
       toast({
         title: 'Error',
-        description: 'Failed to save user. Please try again.',
+        description: error.message || 'Failed to save user. Please try again.',
         variant: 'destructive',
       });
     } finally {
@@ -228,36 +322,50 @@ const AddEditUserModal = ({ isOpen, onClose, user, onUserUpdated }: AddEditUserM
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="first_name">First Name</Label>
+              <Label htmlFor="first_name">First Name *</Label>
               <Input
                 id="first_name"
                 value={formData.first_name}
                 onChange={(e) => handleInputChange('first_name', e.target.value)}
                 required
+                maxLength={50}
+                className={formErrors.first_name ? 'border-red-500' : ''}
               />
+              {formErrors.first_name && (
+                <p className="text-sm text-red-500 mt-1">{formErrors.first_name}</p>
+              )}
             </div>
             <div>
-              <Label htmlFor="last_name">Last Name</Label>
+              <Label htmlFor="last_name">Last Name *</Label>
               <Input
                 id="last_name"
                 value={formData.last_name}
                 onChange={(e) => handleInputChange('last_name', e.target.value)}
                 required
+                maxLength={50}
+                className={formErrors.last_name ? 'border-red-500' : ''}
               />
+              {formErrors.last_name && (
+                <p className="text-sm text-red-500 mt-1">{formErrors.last_name}</p>
+              )}
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">Email *</Label>
               <Input
                 id="email"
                 type="email"
                 value={formData.email}
                 onChange={(e) => handleInputChange('email', e.target.value)}
                 required
-                disabled={!!user} // Cannot change email for existing users
+                disabled={!!user}
+                className={formErrors.email ? 'border-red-500' : ''}
               />
+              {formErrors.email && (
+                <p className="text-sm text-red-500 mt-1">{formErrors.email}</p>
+              )}
             </div>
             <div>
               <Label htmlFor="phone">Phone</Label>
@@ -265,13 +373,18 @@ const AddEditUserModal = ({ isOpen, onClose, user, onUserUpdated }: AddEditUserM
                 id="phone"
                 value={formData.phone}
                 onChange={(e) => handleInputChange('phone', e.target.value)}
+                maxLength={15}
+                className={formErrors.phone ? 'border-red-500' : ''}
               />
+              {formErrors.phone && (
+                <p className="text-sm text-red-500 mt-1">{formErrors.phone}</p>
+              )}
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="user_role">Role</Label>
+              <Label htmlFor="user_role">Role *</Label>
               <Select value={formData.user_role} onValueChange={(value: 'senior_staff' | 'staff') => handleInputChange('user_role', value)}>
                 <SelectTrigger>
                   <SelectValue />
@@ -283,7 +396,7 @@ const AddEditUserModal = ({ isOpen, onClose, user, onUserUpdated }: AddEditUserM
               </Select>
             </div>
             <div>
-              <Label htmlFor="status">Status</Label>
+              <Label htmlFor="status">Status *</Label>
               <Select value={formData.status} onValueChange={(value: 'active' | 'inactive') => handleInputChange('status', value)}>
                 <SelectTrigger>
                   <SelectValue />

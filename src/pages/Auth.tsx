@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -14,11 +15,38 @@ import { toast } from 'sonner';
 type UserGroup = 'accounting_firm' | 'business_owner';
 type UserRole = 'partner' | 'senior_staff' | 'staff' | 'client' | 'management' | 'accounting_team';
 
+// Security: Input validation functions
+const validateEmail = (email: string): boolean => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+};
+
+const validatePassword = (password: string): boolean => {
+  // Security: Enforce strong password requirements
+  const minLength = password.length >= 8;
+  const hasUpperCase = /[A-Z]/.test(password);
+  const hasLowerCase = /[a-z]/.test(password);
+  const hasNumbers = /\d/.test(password);
+  const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+  
+  return minLength && hasUpperCase && hasLowerCase && hasNumbers && hasSpecialChar;
+};
+
+const validateName = (name: string): boolean => {
+  const nameRegex = /^[a-zA-Z\s\-']{2,50}$/;
+  return nameRegex.test(name);
+};
+
+const sanitizeInput = (input: string): string => {
+  return input.trim().replace(/[<>]/g, '');
+};
+
 const Auth = () => {
   const navigate = useNavigate();
   const [isSignUp, setIsSignUp] = useState(false);
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [attemptCount, setAttemptCount] = useState(0);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -30,18 +58,101 @@ const Auth = () => {
     firmName: '',
     businessName: '',
   });
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     // Note: RouteGuard will handle redirecting authenticated users
     // No need to check auth state here
   }, []);
 
+  // Security: Rate limiting for authentication attempts
+  const checkRateLimit = (): boolean => {
+    if (attemptCount >= 5) {
+      toast.error('Too many attempts. Please wait before trying again.');
+      return false;
+    }
+    return true;
+  };
+
+  // Security: Comprehensive form validation
+  const validateSignInForm = (): boolean => {
+    const errors: Record<string, string> = {};
+
+    if (!validateEmail(formData.email)) {
+      errors.email = 'Please enter a valid email address';
+    }
+
+    if (!formData.password) {
+      errors.password = 'Password is required';
+    }
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const validateSignUpForm = (): boolean => {
+    const errors: Record<string, string> = {};
+
+    if (!validateName(formData.firstName)) {
+      errors.firstName = 'First name must be 2-50 characters, letters only';
+    }
+
+    if (!validateName(formData.lastName)) {
+      errors.lastName = 'Last name must be 2-50 characters, letters only';
+    }
+
+    if (!validateEmail(formData.email)) {
+      errors.email = 'Please enter a valid email address';
+    }
+
+    if (!validatePassword(formData.password)) {
+      errors.password = 'Password must be at least 8 characters with uppercase, lowercase, number, and special character';
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      errors.confirmPassword = 'Passwords do not match';
+    }
+
+    if (step === 2) {
+      if (!formData.userGroup || !formData.userRole) {
+        errors.role = 'Please select your role and organization type';
+      }
+
+      if (formData.userGroup === 'accounting_firm' && (!formData.firmName || formData.firmName.length < 2)) {
+        errors.firmName = 'Please enter a valid firm name (minimum 2 characters)';
+      }
+
+      if (formData.userGroup === 'business_owner' && (!formData.businessName || formData.businessName.length < 2)) {
+        errors.businessName = 'Please enter a valid business name (minimum 2 characters)';
+      }
+    }
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    // Security: Sanitize input
+    const sanitizedValue = sanitizeInput(value);
+    setFormData(prev => ({ ...prev, [field]: sanitizedValue }));
+    
+    // Clear field error when user starts typing
+    if (formErrors[field]) {
+      setFormErrors(prev => ({ ...prev, [field]: undefined }));
+    }
   };
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Security: Check rate limiting
+    if (!checkRateLimit()) return;
+    
+    // Security: Validate form
+    if (!validateSignInForm()) {
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -51,12 +162,15 @@ const Auth = () => {
       });
 
       if (error) {
+        setAttemptCount(prev => prev + 1);
         toast.error(error.message);
       } else {
         toast.success('Successfully signed in!');
+        setAttemptCount(0);
         // RouteGuard will handle the redirect
       }
     } catch (error) {
+      setAttemptCount(prev => prev + 1);
       toast.error('An unexpected error occurred');
     } finally {
       setLoading(false);
@@ -68,16 +182,7 @@ const Auth = () => {
     
     if (step === 1) {
       // Validate basic info
-      if (!formData.email || !formData.password || !formData.firstName || !formData.lastName) {
-        toast.error('Please fill in all required fields');
-        return;
-      }
-      if (formData.password !== formData.confirmPassword) {
-        toast.error('Passwords do not match');
-        return;
-      }
-      if (formData.password.length < 6) {
-        toast.error('Password must be at least 6 characters');
+      if (!validateSignUpForm()) {
         return;
       }
       setStep(2);
@@ -85,18 +190,7 @@ const Auth = () => {
     }
 
     // Step 2: Complete registration
-    if (!formData.userGroup || !formData.userRole) {
-      toast.error('Please select your role and organization type');
-      return;
-    }
-
-    if (formData.userGroup === 'accounting_firm' && !formData.firmName) {
-      toast.error('Please enter your firm name');
-      return;
-    }
-
-    if (formData.userGroup === 'business_owner' && !formData.businessName) {
-      toast.error('Please enter your business name');
+    if (!validateSignUpForm()) {
       return;
     }
 
@@ -188,7 +282,11 @@ const Auth = () => {
                     value={formData.email}
                     onChange={(e) => handleInputChange('email', e.target.value)}
                     required
+                    className={formErrors.email ? 'border-red-500' : ''}
                   />
+                  {formErrors.email && (
+                    <p className="text-sm text-red-500">{formErrors.email}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="password">Password</Label>
@@ -198,14 +296,18 @@ const Auth = () => {
                     value={formData.password}
                     onChange={(e) => handleInputChange('password', e.target.value)}
                     required
+                    className={formErrors.password ? 'border-red-500' : ''}
                   />
+                  {formErrors.password && (
+                    <p className="text-sm text-red-500">{formErrors.password}</p>
+                  )}
                 </div>
-                <Button type="submit" className="w-full" disabled={loading}>
+                <Button type="submit" className="w-full" disabled={loading || attemptCount >= 5}>
                   {loading ? 'Signing in...' : 'Sign In'}
                 </Button>
               </form>
             ) : step === 1 ? (
-              // ... keep existing code (step 1 sign up form)
+              // Step 1 sign up form with enhanced validation
               <form onSubmit={handleSignUp} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -215,7 +317,12 @@ const Auth = () => {
                       value={formData.firstName}
                       onChange={(e) => handleInputChange('firstName', e.target.value)}
                       required
+                      maxLength={50}
+                      className={formErrors.firstName ? 'border-red-500' : ''}
                     />
+                    {formErrors.firstName && (
+                      <p className="text-sm text-red-500">{formErrors.firstName}</p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="lastName">Last Name</Label>
@@ -224,7 +331,12 @@ const Auth = () => {
                       value={formData.lastName}
                       onChange={(e) => handleInputChange('lastName', e.target.value)}
                       required
+                      maxLength={50}
+                      className={formErrors.lastName ? 'border-red-500' : ''}
                     />
+                    {formErrors.lastName && (
+                      <p className="text-sm text-red-500">{formErrors.lastName}</p>
+                    )}
                   </div>
                 </div>
                 <div className="space-y-2">
@@ -236,7 +348,11 @@ const Auth = () => {
                     value={formData.email}
                     onChange={(e) => handleInputChange('email', e.target.value)}
                     required
+                    className={formErrors.email ? 'border-red-500' : ''}
                   />
+                  {formErrors.email && (
+                    <p className="text-sm text-red-500">{formErrors.email}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="password">Password</Label>
@@ -246,7 +362,14 @@ const Auth = () => {
                     value={formData.password}
                     onChange={(e) => handleInputChange('password', e.target.value)}
                     required
+                    className={formErrors.password ? 'border-red-500' : ''}
                   />
+                  {formErrors.password && (
+                    <p className="text-sm text-red-500">{formErrors.password}</p>
+                  )}
+                  <p className="text-xs text-gray-500">
+                    Must be 8+ characters with uppercase, lowercase, number, and special character
+                  </p>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="confirmPassword">Confirm Password</Label>
@@ -256,14 +379,18 @@ const Auth = () => {
                     value={formData.confirmPassword}
                     onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
                     required
+                    className={formErrors.confirmPassword ? 'border-red-500' : ''}
                   />
+                  {formErrors.confirmPassword && (
+                    <p className="text-sm text-red-500">{formErrors.confirmPassword}</p>
+                  )}
                 </div>
                 <Button type="submit" className="w-full">
                   Continue
                 </Button>
               </form>
             ) : (
-              // ... keep existing code (step 2 sign up form)
+              // Step 2 sign up form with enhanced validation
               <form onSubmit={handleSignUp} className="space-y-4">
                 <Button
                   type="button"
@@ -281,7 +408,7 @@ const Auth = () => {
                     handleInputChange('userGroup', value);
                     handleInputChange('userRole', '');
                   }}>
-                    <SelectTrigger>
+                    <SelectTrigger className={formErrors.role ? 'border-red-500' : ''}>
                       <SelectValue placeholder="Select your organization type" />
                     </SelectTrigger>
                     <SelectContent>
@@ -295,7 +422,7 @@ const Auth = () => {
                   <div className="space-y-2">
                     <Label htmlFor="userRole">Role:</Label>
                     <Select value={formData.userRole} onValueChange={(value: UserRole) => handleInputChange('userRole', value)}>
-                      <SelectTrigger>
+                      <SelectTrigger className={formErrors.role ? 'border-red-500' : ''}>
                         <SelectValue placeholder="Select your role" />
                       </SelectTrigger>
                       <SelectContent>
@@ -309,6 +436,10 @@ const Auth = () => {
                   </div>
                 )}
 
+                {formErrors.role && (
+                  <p className="text-sm text-red-500">{formErrors.role}</p>
+                )}
+
                 {formData.userGroup === 'accounting_firm' && (
                   <div className="space-y-2">
                     <Label htmlFor="firmName">Firm Name</Label>
@@ -318,7 +449,12 @@ const Auth = () => {
                       value={formData.firmName}
                       onChange={(e) => handleInputChange('firmName', e.target.value)}
                       required
+                      maxLength={100}
+                      className={formErrors.firmName ? 'border-red-500' : ''}
                     />
+                    {formErrors.firmName && (
+                      <p className="text-sm text-red-500">{formErrors.firmName}</p>
+                    )}
                   </div>
                 )}
 
@@ -331,7 +467,12 @@ const Auth = () => {
                       value={formData.businessName}
                       onChange={(e) => handleInputChange('businessName', e.target.value)}
                       required
+                      maxLength={100}
+                      className={formErrors.businessName ? 'border-red-500' : ''}
                     />
+                    {formErrors.businessName && (
+                      <p className="text-sm text-red-500">{formErrors.businessName}</p>
+                    )}
                   </div>
                 )}
 
@@ -360,6 +501,8 @@ const Auth = () => {
                     firmName: '',
                     businessName: '',
                   });
+                  setFormErrors({});
+                  setAttemptCount(0);
                 }}
               >
                 {isSignUp ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
