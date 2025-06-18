@@ -63,8 +63,8 @@ const AppSidebar = () => {
     if (profile.user_role === 'partner') {
       baseItems.push(
         { title: "Clients", url: "/app/clients", icon: Building2 },
+        { title: "Team Management", url: "/app/team", icon: Users },
         { title: "Assign Clients", url: "/app/assign-clients", icon: UserCheck },
-        { title: "Team", url: "/app/team", icon: Users },
         { title: "Settings", url: "/app/settings", icon: Settings }
       );
     }

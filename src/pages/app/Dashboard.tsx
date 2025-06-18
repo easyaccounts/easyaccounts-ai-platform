@@ -6,12 +6,13 @@ import { useFirmDashboard } from '@/hooks/useFirmDashboard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, FileText, Clock, TrendingUp } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 
 const Dashboard = () => {
   const { profile, loading } = useAuth();
   const { data: dashboardData, isLoading: dashboardLoading } = useFirmDashboard();
+  const navigate = useNavigate();
 
   console.log('App Dashboard rendering:', { 
     profile: profile ? { userGroup: profile.user_group, userRole: profile.user_role } : null,
@@ -167,20 +168,39 @@ const Dashboard = () => {
               <CardTitle>Quick Actions</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <Button asChild className="w-full">
-                <Link to="/app/clients">Add New Client</Link>
+              <Button 
+                onClick={() => navigate('/app/clients')} 
+                className="w-full"
+              >
+                Add New Client
               </Button>
-              <Button asChild variant="outline" className="w-full">
-                <Link to="/app/deliverables">Create Deliverable</Link>
+              <Button 
+                onClick={() => navigate('/app/deliverables')} 
+                variant="outline" 
+                className="w-full"
+              >
+                Create Deliverable
               </Button>
-              <Button asChild variant="outline" className="w-full">
-                <Link to="/app/team">Manage Team</Link>
+              <Button 
+                onClick={() => navigate('/app/team')} 
+                variant="outline" 
+                className="w-full"
+              >
+                Manage Team
               </Button>
-              <Button asChild variant="outline" className="w-full">
-                <Link to="/app/assign-clients">Assign Clients</Link>
+              <Button 
+                onClick={() => navigate('/app/assign-clients')} 
+                variant="outline" 
+                className="w-full"
+              >
+                Assign Clients
               </Button>
-              <Button asChild variant="outline" className="w-full">
-                <Link to="/app/reports">View Reports</Link>
+              <Button 
+                onClick={() => navigate('/app/reports')} 
+                variant="outline" 
+                className="w-full"
+              >
+                View Reports
               </Button>
             </CardContent>
           </Card>

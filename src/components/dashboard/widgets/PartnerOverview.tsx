@@ -29,7 +29,7 @@ const PartnerOverview = () => {
   };
 
   const handleManageTeam = () => {
-    navigate('/app/team-management');
+    navigate('/app/team');
   };
 
   if (isLoading) {
@@ -151,7 +151,7 @@ const PartnerOverview = () => {
               onClick={handleManageTeam}
             >
               <UserPlus className="w-4 h-4 mr-2" />
-              Create Firm User
+              Manage Team
             </Button>
           </CardContent>
         </Card>
