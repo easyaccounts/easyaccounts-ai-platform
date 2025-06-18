@@ -1,11 +1,12 @@
+
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from 'react-query';
-import { Toaster } from 'react-hot-toast';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Toaster } from '@/components/ui/sonner';
 import Landing from '@/pages/Landing';
 import Auth from '@/pages/Auth';
-import AppLayout from '@/layouts/AppLayout';
-import ClientLayout from '@/layouts/ClientLayout';
+import AppLayout from '@/components/AppLayout';
+import ClientLayout from '@/components/ClientLayout';
 import Dashboard from '@/pages/app/Dashboard';
 import Clients from '@/pages/app/Clients';
 import Settings from '@/pages/app/Settings';
