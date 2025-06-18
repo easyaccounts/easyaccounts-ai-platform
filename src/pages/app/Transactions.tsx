@@ -80,7 +80,7 @@ const Transactions = () => {
 
   const activeCycle = TRANSACTION_CYCLES.find(cycle => cycle.id === activeTab);
 
-  const handleCreateTransaction = async (data: any) => {
+  const handleCreateTransaction = async (data: any): Promise<void> => {
     await createTransaction({
       ...data,
       cycle: activeTab,
