@@ -62,7 +62,7 @@ const ClientDashboard = () => {
         .rpc('get_client_dashboard_stats', { p_client_id: clientId });
       
       if (error) throw error;
-      return data as DashboardStats;
+      return data as unknown as DashboardStats;
     },
     enabled: !!clientId,
   });
