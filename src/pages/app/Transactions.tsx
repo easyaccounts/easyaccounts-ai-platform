@@ -87,6 +87,8 @@ const Transactions = () => {
       source: entryMode || 'manual'
     });
     setEntryMode(null);
+    // Explicitly return void to satisfy TypeScript
+    return;
   };
 
   return (
