@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -25,10 +24,10 @@ const PartnerFirmDashboard = () => {
 
   const fetchDashboardData = async () => {
     try {
-      // Fetch clients stats
+      // Fetch clients stats with proper name field
       const { data: clients } = await supabase
         .from('clients')
-        .select('id, created_at, monthly_fee');
+        .select('id, created_at, monthly_fee, name');
 
       const totalClients = clients?.length || 0;
       const newClientsThisMonth = clients?.filter(client => 
@@ -38,7 +37,7 @@ const PartnerFirmDashboard = () => {
       // Fetch deliverables stats
       const { data: deliverables } = await supabase
         .from('deliverables')
-        .select('id, status, client_id, clients(name, monthly_fee)');
+        .select('id, status');
 
       const totalDeliverables = deliverables?.length || 0;
       const pendingDeliverables = deliverables?.filter(d => d.status === 'pending').length || 0;

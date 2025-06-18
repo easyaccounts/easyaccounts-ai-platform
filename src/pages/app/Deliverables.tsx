@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { useClientContext } from '@/hooks/useClientContext';
+import { useUserContext } from '@/hooks/useUserContext';
 import { useSessionContext } from '@/hooks/useSessionContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -35,8 +35,9 @@ type Deliverable = Database['public']['Tables']['deliverables']['Row'] & {
 const Deliverables = () => {
   const navigate = useNavigate();
   const { profile } = useAuth();
-  const { selectedClient } = useClientContext();
+  const { selectedClient, currentView } = useUserContext();
   const { viewMode } = useSessionContext();
+  
   const [deliverables, setDeliverables] = useState<Deliverable[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -51,7 +52,7 @@ const Deliverables = () => {
     if (profile) {
       fetchDeliverables();
     }
-  }, [profile, selectedClient, viewMode]);
+  }, [profile, selectedClient, currentView]);
 
   const fetchDeliverables = async () => {
     try {
@@ -67,7 +68,7 @@ const Deliverables = () => {
         query = query.eq('firm_id', profile.firm_id);
         
         // In client view mode, filter by selected client
-        if (viewMode === 'client' && selectedClient) {
+        if (currentView === 'client' && selectedClient) {
           query = query.eq('client_id', selectedClient.id);
         }
       } else if (profile?.user_group === 'business_owner') {
@@ -315,7 +316,7 @@ const Deliverables = () => {
         <div>
           <h1 className="text-2xl font-bold">Deliverables</h1>
           <p className="text-muted-foreground">
-            {viewMode === 'client' && selectedClient 
+            {currentView === 'client' && selectedClient 
               ? `Deliverables for ${selectedClient.name}`
               : 'Manage client deliverables and their status'
             }
@@ -361,7 +362,7 @@ const Deliverables = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead>Title</TableHead>
-                  {viewMode !== 'client' && <TableHead>Client</TableHead>}
+                  {currentView !== 'client' && <TableHead>Client</TableHead>}
                   <TableHead>Type</TableHead>
                   <TableHead>Due Date</TableHead>
                   <TableHead>Assigned To</TableHead>
@@ -380,7 +381,7 @@ const Deliverables = () => {
                         </div>
                       </div>
                     </TableCell>
-                    {viewMode !== 'client' && (
+                    {currentView !== 'client' && (
                       <TableCell>{deliverable.clients?.name}</TableCell>
                     )}
                     <TableCell>
