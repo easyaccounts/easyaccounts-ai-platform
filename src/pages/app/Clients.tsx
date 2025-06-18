@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Plus, Search, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -35,6 +34,11 @@ const Clients = () => {
   const handleEditClient = (client) => {
     setSelectedClient(client);
     setIsModalOpen(true);
+  };
+
+  const handleClientSaved = () => {
+    setIsModalOpen(false);
+    setSelectedClient(null);
   };
 
   const formatCurrency = (amount) => {
@@ -161,8 +165,7 @@ const Clients = () => {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         client={selectedClient}
-        onSubmit={selectedClient ? updateClient : createClient}
-        isLoading={isCreating || isUpdating}
+        onClientSaved={handleClientSaved}
       />
     </div>
   );
