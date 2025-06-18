@@ -174,7 +174,10 @@ const Dashboard = () => {
                 <Link to="/app/deliverables">Create Deliverable</Link>
               </Button>
               <Button asChild variant="outline" className="w-full">
-                <Link to="/app/team-management">Manage Team</Link>
+                <Link to="/app/team">Manage Team</Link>
+              </Button>
+              <Button asChild variant="outline" className="w-full">
+                <Link to="/app/assign-clients">Assign Clients</Link>
               </Button>
               <Button asChild variant="outline" className="w-full">
                 <Link to="/app/reports">View Reports</Link>

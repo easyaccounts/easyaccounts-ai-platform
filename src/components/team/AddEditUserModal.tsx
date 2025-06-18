@@ -8,6 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Database } from '@/integrations/supabase/types';
 import { UI_MESSAGES } from '@/utils/constants';
+import { useUserContext } from '@/hooks/useUserContext';
+import { toast } from '@/hooks/use-toast';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 type Client = Database['public']['Tables']['clients']['Row'];
@@ -42,6 +44,7 @@ const AddEditUserModal = ({
   onSubmit, 
   isSubmitting 
 }: AddEditUserModalProps) => {
+  const { firmId: contextFirmId } = useUserContext();
   const [formData, setFormData] = useState<FormData>({
     first_name: '',
     last_name: '',
@@ -54,7 +57,13 @@ const AddEditUserModal = ({
 
   useEffect(() => {
     if (isOpen) {
-      if (!firmId && !user) {
+      const activeFirmId = firmId || contextFirmId;
+      if (!activeFirmId && !user) {
+        toast({
+          title: 'Error',
+          description: 'Firm context is required to add team members',
+          variant: 'destructive',
+        });
         onClose();
         return;
       }
@@ -68,13 +77,12 @@ const AddEditUserModal = ({
           user_role: (user.user_role as 'senior_staff' | 'staff') || 'staff',
           status: (user.status as 'active' | 'inactive') || 'active',
         });
-        // TODO: Fetch user assignments for editing
         setSelectedClients([]);
       } else {
         resetForm();
       }
     }
-  }, [isOpen, user, firmId, onClose]);
+  }, [isOpen, user, firmId, contextFirmId, onClose]);
 
   const resetForm = () => {
     setFormData({
@@ -91,12 +99,28 @@ const AddEditUserModal = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    const activeFirmId = firmId || contextFirmId;
+    if (!activeFirmId) {
+      toast({
+        title: 'Error',
+        description: 'Firm ID is required',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     try {
       await onSubmit({
         id: user?.id,
         ...formData,
-        firm_id: firmId,
+        firm_id: activeFirmId,
+        user_group: 'accounting_firm',
         selectedClients,
+      });
+
+      toast({
+        title: 'Success',
+        description: user ? 'Team member updated successfully' : 'Team member added successfully',
       });
 
       onUserUpdated();
@@ -104,6 +128,11 @@ const AddEditUserModal = ({
       resetForm();
     } catch (error: any) {
       console.error('Error saving user:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to save team member',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -119,7 +148,7 @@ const AddEditUserModal = ({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{user ? 'Edit User' : 'Add Team Member'}</DialogTitle>
+          <DialogTitle>{user ? 'Edit Team Member' : 'Add Team Member'}</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -193,30 +222,32 @@ const AddEditUserModal = ({
             </div>
           </div>
 
-          <div>
-            <Label>Assigned Clients</Label>
-            <div className="mt-2 max-h-48 overflow-y-auto border rounded-md p-3 space-y-2">
-              {clients.map((client) => (
-                <div key={client.id} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={client.id}
-                    checked={selectedClients.includes(client.id)}
-                    onCheckedChange={(checked) => handleClientToggle(client.id, checked as boolean)}
-                  />
-                  <Label htmlFor={client.id} className="text-sm font-normal">
-                    {client.name}
-                  </Label>
-                </div>
-              ))}
+          {clients.length > 0 && (
+            <div>
+              <Label>Assigned Clients</Label>
+              <div className="mt-2 max-h-48 overflow-y-auto border rounded-md p-3 space-y-2">
+                {clients.map((client) => (
+                  <div key={client.id} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={client.id}
+                      checked={selectedClients.includes(client.id)}
+                      onCheckedChange={(checked) => handleClientToggle(client.id, checked as boolean)}
+                    />
+                    <Label htmlFor={client.id} className="text-sm font-normal">
+                      {client.name}
+                    </Label>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           <div className="flex justify-end space-x-2">
-            <Button type="button" variant="outline" onClick={onClose}>
+            <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
               Cancel
             </Button>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? UI_MESSAGES.SAVING : user ? 'Update User' : 'Add Team Member'}
+              {isSubmitting ? UI_MESSAGES.SAVING : user ? 'Update Team Member' : 'Add Team Member'}
             </Button>
           </div>
         </form>

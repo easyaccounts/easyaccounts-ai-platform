@@ -7,6 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Database } from '@/integrations/supabase/types';
+import { useUserContext } from '@/hooks/useUserContext';
+import { toast } from '@/hooks/use-toast';
 
 type Client = Database['public']['Tables']['clients']['Row'];
 
@@ -47,6 +49,7 @@ const AddEditClientModal = ({
   onSubmit, 
   isSubmitting 
 }: AddEditClientModalProps) => {
+  const { firmId: contextFirmId } = useUserContext();
   const [formData, setFormData] = useState<FormData>({
     name: '',
     email: '',
@@ -67,6 +70,17 @@ const AddEditClientModal = ({
 
   useEffect(() => {
     if (isOpen) {
+      const activeFirmId = firmId || contextFirmId;
+      if (!activeFirmId && !client) {
+        toast({
+          title: 'Error',
+          description: 'Firm context is required to add clients',
+          variant: 'destructive',
+        });
+        onClose();
+        return;
+      }
+
       if (client) {
         setFormData({
           name: client.name || '',
@@ -89,7 +103,7 @@ const AddEditClientModal = ({
         resetForm();
       }
     }
-  }, [isOpen, client]);
+  }, [isOpen, client, firmId, contextFirmId, onClose]);
 
   const resetForm = () => {
     setFormData({
@@ -114,24 +128,39 @@ const AddEditClientModal = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!firmId) {
-      console.error('Firm ID is required');
+    const activeFirmId = firmId || contextFirmId;
+    if (!activeFirmId) {
+      toast({
+        title: 'Error',
+        description: 'Firm ID is required',
+        variant: 'destructive',
+      });
       return;
     }
 
     try {
       await onSubmit({
         id: client?.id,
-        firm_id: firmId,
+        firm_id: activeFirmId,
         ...formData,
         monthly_fee: formData.monthly_fee ? parseFloat(formData.monthly_fee) : 0,
+      });
+
+      toast({
+        title: 'Success',
+        description: client ? 'Client updated successfully' : 'Client added successfully',
       });
 
       onClientSaved();
       onClose();
       resetForm();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving client:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to save client',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -308,7 +337,7 @@ const AddEditClientModal = ({
           </div>
 
           <div className="flex justify-end space-x-2">
-            <Button type="button" variant="outline" onClick={onClose}>
+            <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
               Cancel
             </Button>
             <Button type="submit" disabled={isSubmitting}>
