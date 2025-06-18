@@ -6,19 +6,21 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { useToast } from '@/hooks/use-toast';
-import { useUserContext } from '@/hooks/useUserContext';
-import { useTeamManager } from '@/hooks/useTeamManager';
 import { Database } from '@/integrations/supabase/types';
 import { UI_MESSAGES } from '@/utils/constants';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
+type Client = Database['public']['Tables']['clients']['Row'];
 
 interface AddEditUserModalProps {
   isOpen: boolean;
   onClose: () => void;
   user?: Profile | null;
   onUserUpdated: () => void;
+  firmId: string | null;
+  clients: Client[];
+  onSubmit: (data: any) => Promise<void>;
+  isSubmitting: boolean;
 }
 
 interface FormData {
@@ -30,10 +32,16 @@ interface FormData {
   status: 'active' | 'inactive';
 }
 
-const AddEditUserModal = ({ isOpen, onClose, user, onUserUpdated }: AddEditUserModalProps) => {
-  const { toast } = useToast();
-  const { firmId } = useUserContext();
-  const { clients, createTeamMember, updateTeamMember, isCreating, isUpdating } = useTeamManager();
+const AddEditUserModal = ({ 
+  isOpen, 
+  onClose, 
+  user, 
+  onUserUpdated, 
+  firmId, 
+  clients, 
+  onSubmit, 
+  isSubmitting 
+}: AddEditUserModalProps) => {
   const [formData, setFormData] = useState<FormData>({
     first_name: '',
     last_name: '',
@@ -46,13 +54,7 @@ const AddEditUserModal = ({ isOpen, onClose, user, onUserUpdated }: AddEditUserM
 
   useEffect(() => {
     if (isOpen) {
-      // Check if firmId is available
       if (!firmId && !user) {
-        toast({
-          title: 'Error',
-          description: UI_MESSAGES.ERROR_FIRM_DETECTION,
-          variant: 'destructive',
-        });
         onClose();
         return;
       }
@@ -72,7 +74,7 @@ const AddEditUserModal = ({ isOpen, onClose, user, onUserUpdated }: AddEditUserM
         resetForm();
       }
     }
-  }, [isOpen, user, firmId, toast, onClose]);
+  }, [isOpen, user, firmId, onClose]);
 
   const resetForm = () => {
     setFormData({
@@ -90,37 +92,18 @@ const AddEditUserModal = ({ isOpen, onClose, user, onUserUpdated }: AddEditUserM
     e.preventDefault();
 
     try {
-      if (user) {
-        // Update existing user
-        await updateTeamMember({
-          id: user.id,
-          ...formData,
-          selectedClients,
-        });
-      } else {
-        // Validate firmId before creating new user
-        if (!firmId) {
-          throw new Error(UI_MESSAGES.ERROR_FIRM_DETECTION);
-        }
-
-        // Create new team member
-        await createTeamMember({
-          ...formData,
-          firm_id: firmId,
-          selectedClients,
-        });
-      }
+      await onSubmit({
+        id: user?.id,
+        ...formData,
+        firm_id: firmId,
+        selectedClients,
+      });
 
       onUserUpdated();
       onClose();
       resetForm();
     } catch (error: any) {
       console.error('Error saving user:', error);
-      toast({
-        title: 'Error',
-        description: error.message || UI_MESSAGES.ERROR_GENERIC,
-        variant: 'destructive',
-      });
     }
   };
 
@@ -131,8 +114,6 @@ const AddEditUserModal = ({ isOpen, onClose, user, onUserUpdated }: AddEditUserM
       setSelectedClients(prev => prev.filter(id => id !== clientId));
     }
   };
-
-  const loading = isCreating || isUpdating;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -234,8 +215,8 @@ const AddEditUserModal = ({ isOpen, onClose, user, onUserUpdated }: AddEditUserM
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit" disabled={loading}>
-              {loading ? UI_MESSAGES.SAVING : user ? 'Update User' : 'Add Team Member'}
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? UI_MESSAGES.SAVING : user ? 'Update User' : 'Add Team Member'}
             </Button>
           </div>
         </form>

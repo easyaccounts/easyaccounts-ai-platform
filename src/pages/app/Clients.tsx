@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Plus, Search, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -6,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useClientManager } from '@/hooks/useClientManager';
+import { useAuth } from '@/hooks/useAuth';
 import AddEditClientModal from '@/components/clients/AddEditClientModal';
 import { TableSkeleton } from '@/components/ui/table-skeleton';
 
@@ -15,6 +17,7 @@ const Clients = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState(null);
   
+  const { profile } = useAuth();
   const { 
     clients, 
     isLoading, 
@@ -39,6 +42,14 @@ const Clients = () => {
   const handleClientSaved = () => {
     setIsModalOpen(false);
     setSelectedClient(null);
+  };
+
+  const handleSaveClient = async (data) => {
+    if (selectedClient) {
+      await updateClient({ ...data, id: selectedClient.id });
+    } else {
+      await createClient(data);
+    }
   };
 
   const formatCurrency = (amount) => {
@@ -166,6 +177,9 @@ const Clients = () => {
         onClose={() => setIsModalOpen(false)}
         client={selectedClient}
         onClientSaved={handleClientSaved}
+        firmId={profile?.firm_id || null}
+        onSubmit={handleSaveClient}
+        isSubmitting={isCreating || isUpdating}
       />
     </div>
   );
