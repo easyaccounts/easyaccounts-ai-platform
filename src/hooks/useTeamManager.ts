@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -115,7 +114,7 @@ export const useTeamManager = () => {
           last_name: memberData.last_name,
           phone: memberData.phone,
           user_role: memberData.user_role,
-          user_group: USER_GROUPS.ACCOUNTING_FIRM as const,
+          user_group: USER_GROUPS.ACCOUNTING_FIRM,
           firm_id: memberData.firm_id,
           status: memberData.status,
         });

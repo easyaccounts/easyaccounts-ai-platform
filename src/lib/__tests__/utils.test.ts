@@ -1,5 +1,5 @@
 
-import { cn, clsx } from '../utils';
+import { cn } from '../utils';
 
 describe('utils', () => {
   describe('cn function', () => {

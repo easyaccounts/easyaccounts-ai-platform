@@ -22,4 +22,9 @@ module.exports = {
     '!src/main.tsx',
     '!src/vite-env.d.ts',
   ],
+  globals: {
+    'ts-jest': {
+      useESM: true,
+    },
+  },
 };
