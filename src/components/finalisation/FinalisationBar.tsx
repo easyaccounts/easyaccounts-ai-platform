@@ -110,6 +110,10 @@ const FinalisationBar = ({ entityType, entity, onUpdate }: FinalisationBarProps)
     }
   };
 
+  const handleNotifyClientChange = (checked: boolean | 'indeterminate') => {
+    setNotifyClient(checked === true);
+  };
+
   const isFinal = entity.status === 'final';
   const isSharedWithClient = entity.status === 'shared_with_client';
   const canRevoke = isFinal && !isSharedWithClient && canFinalise;
@@ -228,7 +232,7 @@ const FinalisationBar = ({ entityType, entity, onUpdate }: FinalisationBarProps)
               <Checkbox
                 id="notify-client"
                 checked={notifyClient}
-                onCheckedChange={setNotifyClient}
+                onCheckedChange={handleNotifyClientChange}
               />
               <Label htmlFor="notify-client">
                 Send notification to client

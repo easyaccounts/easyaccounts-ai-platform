@@ -115,7 +115,7 @@ const Reports = () => {
         .in('id', finalisedIds);
 
       // Fetch shared user names separately
-      const sharedIds = [...new Set(reportsData?.map(r => r.shared_with_client).filter(Boolean) || [])];
+      const sharedIds = [...new Set(reportsData?.map(r => r.shared_by).filter(Boolean) || [])];
       const { data: sharedUsers } = await supabase
         .from('profiles')
         .select('id, first_name, last_name')
@@ -127,7 +127,7 @@ const Reports = () => {
         clients: clients?.find(c => c.id === report.client_id),
         approved_user: approvedUsers?.find(u => u.id === report.approved_by),
         finalised_user: finalisedUsers?.find(u => u.id === report.finalised_by),
-        shared_user: sharedUsers?.find(u => u.id === report.shared_with_client)
+        shared_user: sharedUsers?.find(u => u.id === report.shared_by)
       })) || [];
 
       setReports(enrichedReports);

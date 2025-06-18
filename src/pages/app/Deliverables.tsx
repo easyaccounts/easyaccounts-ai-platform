@@ -110,7 +110,7 @@ const Deliverables = () => {
         .in('id', finalisedIds);
 
       // Fetch shared user names separately
-      const sharedIds = [...new Set(deliverablesData?.map(d => d.shared_with_client).filter(Boolean) || [])];
+      const sharedIds = [...new Set(deliverablesData?.map(d => d.shared_by).filter(Boolean) || [])];
       const { data: sharedUsers } = await supabase
         .from('profiles')
         .select('id, first_name, last_name')
@@ -122,7 +122,7 @@ const Deliverables = () => {
         clients: clients?.find(c => c.id === deliverable.client_id),
         assigned_user: assignedUsers?.find(u => u.id === deliverable.assigned_to),
         finalised_user: finalisedUsers?.find(u => u.id === deliverable.finalised_by),
-        shared_user: sharedUsers?.find(u => u.id === deliverable.shared_with_client)
+        shared_user: sharedUsers?.find(u => u.id === deliverable.shared_by)
       })) || [];
 
       setDeliverables(enrichedDeliverables);
