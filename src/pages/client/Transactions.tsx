@@ -1,16 +1,16 @@
 
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Settings as SettingsIcon } from 'lucide-react';
+import { Upload } from 'lucide-react';
 
-const Settings = () => {
+const ClientTransactions = () => {
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Settings</h1>
+          <h1 className="text-3xl font-bold">Transactions</h1>
           <p className="text-muted-foreground">
-            Manage your firm's configuration and preferences
+            View and manage your business transactions
           </p>
         </div>
       </div>
@@ -18,17 +18,17 @@ const Settings = () => {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center">
-            <SettingsIcon className="w-5 h-5 mr-2" />
-            Firm Settings
+            <Upload className="w-5 h-5 mr-2" />
+            Transaction History
           </CardTitle>
           <CardDescription>
-            Configure system preferences and user permissions
+            Review your submitted transactions and their status
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="p-8 text-center text-gray-500">
             🚧 This module is under construction.
-            <p className="mt-2 text-sm">Settings functionality will be available soon.</p>
+            <p className="mt-2 text-sm">Transaction management functionality will be available soon.</p>
           </div>
         </CardContent>
       </Card>
@@ -36,4 +36,4 @@ const Settings = () => {
   );
 };
 
-export default Settings;
+export default ClientTransactions;

@@ -1,6 +1,6 @@
 
 import { Home, Users, FileText, Settings, UserCheck, Upload, CheckSquare, Building2, BarChart3, MessageSquare, LogOut, ArrowLeftRight } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserContext } from "@/hooks/useUserContext";
 import {
@@ -20,6 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 const AppSidebar = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { profile, signOut } = useAuth();
   const { currentView, loading, setCurrentView, availableClients, currentClientId, setCurrentClient } = useUserContext();
 
@@ -30,6 +31,17 @@ const AppSidebar = () => {
   const handleViewToggle = async () => {
     const newView = currentView === 'firm' ? 'client' : 'firm';
     await setCurrentView(newView);
+    
+    if (newView === 'client') {
+      // If switching to client view and no client selected, go to select-client page
+      if (!currentClientId) {
+        navigate('/app/select-client');
+      } else {
+        navigate('/client/dashboard');
+      }
+    } else {
+      navigate('/app/dashboard');
+    }
   };
 
   // Show loading skeleton while context loads
@@ -58,41 +70,28 @@ const AppSidebar = () => {
     );
   }
 
-  // Section A - Firm Administration (only for firm view and specific roles)
-  const getFirmAdminItems = () => {
-    if (currentView !== 'firm' || !['partner', 'management'].includes(profile.user_role)) {
-      return [];
-    }
-
-    return [
-      { title: "Clients", url: "/app/clients", icon: Building2 },
-      { title: "Team Management", url: "/app/team", icon: Users },
-      { title: "Assign Clients", url: "/app/assignments", icon: UserCheck },
-      { title: "Transactions", url: "/app/transactions", icon: Upload },
-      { title: "Deliverables Overview", url: "/app/deliverables", icon: FileText },
-    ];
-  };
-
-  // Section B - Process Items (always visible based on view)
-  const getProcessItems = () => {
-    const isClientView = currentView === 'client';
-    
-    if (isClientView) {
+  // Get navigation items based on current view
+  const getNavigationItems = () => {
+    if (currentView === 'client') {
+      // Client View Items - only show if client is selected
+      if (!currentClientId) return [];
+      
       return [
         { title: "Dashboard", url: "/client/dashboard", icon: Home },
-        { title: "My Tasks", url: "/client/tasks", icon: CheckSquare },
+        { title: "Deliverables", url: "/client/deliverables", icon: FileText },
         { title: "Reports", url: "/client/reports", icon: BarChart3 },
         { title: "Requests", url: "/client/requests", icon: MessageSquare },
-        { title: "Documents", url: "/client/documents", icon: Upload },
+        { title: "Transactions", url: "/client/transactions", icon: Upload },
+        { title: "Uploads", url: "/client/uploads", icon: Upload },
+        { title: "Settings", url: "/client/settings", icon: Settings },
       ];
     } else {
-      // Firm view - different items based on role
+      // Firm View Items
       const baseItems = [
         { title: "Dashboard", url: "/app/dashboard", icon: Home },
-        { title: "My Tasks", url: "/app/tasks", icon: CheckSquare },
-        { title: "Reports", url: "/app/reports", icon: BarChart3 },
-        { title: "Requests", url: "/app/requests", icon: MessageSquare },
-        { title: "Uploads", url: "/app/uploads", icon: Upload },
+        { title: "Clients", url: "/app/clients", icon: Building2 },
+        { title: "Team", url: "/app/team", icon: Users },
+        { title: "Assign Clients", url: "/app/assign-clients", icon: UserCheck },
       ];
 
       // Add settings for partners and management
@@ -104,8 +103,7 @@ const AppSidebar = () => {
     }
   };
 
-  const firmAdminItems = getFirmAdminItems();
-  const processItems = getProcessItems();
+  const navigationItems = getNavigationItems();
 
   return (
     <Sidebar>
@@ -157,38 +155,13 @@ const AppSidebar = () => {
       </SidebarHeader>
 
       <SidebarContent>
-        {/* Section A - Firm Administration */}
-        {firmAdminItems.length > 0 && (
-          <SidebarGroup>
-            <SidebarGroupLabel>Firm Administration</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {firmAdminItems.map((item) => (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={location.pathname === item.url}
-                    >
-                      <Link to={item.url}>
-                        <item.icon className="h-4 w-4" />
-                        <span>{item.title}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        )}
-
-        {/* Section B - Process Items */}
         <SidebarGroup>
           <SidebarGroupLabel>
-            {currentView === 'client' ? 'Client Tools' : 'My Work'}
+            {currentView === 'client' ? 'Client Tools' : 'Firm Management'}
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {processItems.map((item) => (
+              {navigationItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
                     asChild
