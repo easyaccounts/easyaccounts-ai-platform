@@ -8,24 +8,30 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Eye, Building2, User } from 'lucide-react';
-import { useSessionContext } from '@/hooks/useSessionContext';
+import { useUserContext } from '@/hooks/useUserContext';
+import { useAuth } from '@/hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
 import ClientSelector from './client/ClientSelector';
 
-interface ViewModeToggleProps {
-  userRole?: string;
-  userGroup?: string;
-}
-
-const ViewModeToggle = ({ userRole, userGroup }: ViewModeToggleProps) => {
-  const { viewMode, setViewMode, loading } = useSessionContext();
+const ViewModeToggle = () => {
+  const { profile } = useAuth();
+  const { currentView, setCurrentView, loading } = useUserContext();
+  const navigate = useNavigate();
 
   // Only show toggle for accounting firm users (chartered accountants)
-  if (userGroup !== 'accounting_firm') {
+  if (profile?.user_group !== 'accounting_firm') {
     return null;
   }
 
   const handleViewChange = async (mode: 'firm' | 'client') => {
-    await setViewMode(mode);
+    await setCurrentView(mode);
+    
+    // Redirect to appropriate dashboard
+    if (mode === 'firm') {
+      navigate('/app/dashboard');
+    } else {
+      navigate('/client/dashboard');
+    }
   };
 
   if (loading) {
@@ -42,7 +48,7 @@ const ViewModeToggle = ({ userRole, userGroup }: ViewModeToggleProps) => {
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="sm" className="px-3 py-2">
-            {viewMode === 'firm' ? (
+            {currentView === 'firm' ? (
               <>
                 <Building2 className="w-4 h-4 mr-2" />
                 Firm View
@@ -67,7 +73,7 @@ const ViewModeToggle = ({ userRole, userGroup }: ViewModeToggleProps) => {
         </DropdownMenuContent>
       </DropdownMenu>
       
-      {viewMode === 'client' && <ClientSelector />}
+      {currentView === 'client' && <ClientSelector />}
     </div>
   );
 };

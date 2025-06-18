@@ -14,21 +14,27 @@ const RouteGuard = ({ children }: RouteGuardProps) => {
   const location = useLocation();
   const [isChecking, setIsChecking] = useState(true);
 
-  const getRoleDashboard = (userRole: string) => {
-    const firmRoles = ['partner', 'senior_staff', 'staff'];
-    const clientRoles = ['client', 'management', 'accounting_team'];
-    
-    if (firmRoles.includes(userRole)) {
-      return '/app';
-    } else if (clientRoles.includes(userRole)) {
-      return '/app'; // All users go to /app, view mode is handled by context
+  const getRoleDashboard = (userGroup: string, userRole: string) => {
+    // Business owners (client group) go to client dashboard
+    if (userGroup === 'business_owner') {
+      return '/client/dashboard';
     }
-    return '/app'; // Default fallback
+    
+    // Accounting firm members
+    if (userGroup === 'accounting_firm') {
+      if (['partner', 'senior_staff', 'staff'].includes(userRole)) {
+        return '/app/dashboard';
+      }
+      if (userRole === 'client') {
+        return '/client/dashboard';
+      }
+    }
+    
+    return '/app/dashboard'; // Default fallback
   };
 
   useEffect(() => {
     const checkAuthAndRedirect = () => {
-      // Still loading auth state
       if (loading) {
         return;
       }
@@ -36,11 +42,12 @@ const RouteGuard = ({ children }: RouteGuardProps) => {
       const currentPath = location.pathname;
       const isPublicPath = ['/', '/landing', '/auth'].includes(currentPath);
       const isAppPath = currentPath.startsWith('/app');
+      const isClientPath = currentPath.startsWith('/client');
 
       // User is not authenticated
       if (!user || !profile) {
-        if (isAppPath) {
-          console.log('Redirecting unauthenticated user from app to landing');
+        if (isAppPath || isClientPath) {
+          console.log('Redirecting unauthenticated user to landing');
           navigate('/', { replace: true });
           return;
         }
@@ -53,13 +60,38 @@ const RouteGuard = ({ children }: RouteGuardProps) => {
       if (user && profile) {
         // If user is on public paths, redirect to their dashboard
         if (isPublicPath) {
-          const dashboardPath = getRoleDashboard(profile.user_role);
+          const dashboardPath = getRoleDashboard(profile.user_group, profile.user_role);
           console.log(`Redirecting authenticated user from ${currentPath} to ${dashboardPath}`);
           navigate(dashboardPath, { replace: true });
           return;
         }
         
-        // User is accessing app paths - allow access
+        // Check role-based access to protected routes
+        if (isAppPath) {
+          // Only allow firm members to access /app routes
+          if (profile.user_group !== 'accounting_firm' || 
+              !['partner', 'senior_staff', 'staff'].includes(profile.user_role)) {
+            const correctDashboard = getRoleDashboard(profile.user_group, profile.user_role);
+            console.log(`Redirecting unauthorized user from ${currentPath} to ${correctDashboard}`);
+            navigate(correctDashboard, { replace: true });
+            return;
+          }
+        }
+        
+        if (isClientPath) {
+          // Allow business owners and client roles to access /client routes
+          const allowedForClient = profile.user_group === 'business_owner' || 
+                                  profile.user_role === 'client' ||
+                                  ['management', 'accounting_team'].includes(profile.user_role);
+          
+          if (!allowedForClient) {
+            const correctDashboard = getRoleDashboard(profile.user_group, profile.user_role);
+            console.log(`Redirecting unauthorized user from ${currentPath} to ${correctDashboard}`);
+            navigate(correctDashboard, { replace: true });
+            return;
+          }
+        }
+        
         setIsChecking(false);
         return;
       }
