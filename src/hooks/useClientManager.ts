@@ -32,22 +32,37 @@ interface UpdateClientData extends Partial<CreateClientData> {
   id: string;
 }
 
-export const useClientManager = () => {
+interface ClientFilters {
+  searchTerm?: string;
+  statusFilter?: string;
+}
+
+export const useClientManager = (filters: ClientFilters = {}) => {
   const { profile } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Query for fetching clients
+  // Query for fetching clients with server-side filtering
   const { data: clients = [], isLoading, error } = useQuery({
-    queryKey: ['clients', profile?.firm_id],
+    queryKey: ['clients', profile?.firm_id, filters],
     queryFn: async () => {
       if (!profile?.firm_id) return [];
       
-      const { data, error } = await supabase
+      let query = supabase
         .from('clients')
         .select('*')
         .eq('firm_id', profile.firm_id)
-        .order('created_at', { ascending: false });
+        .order('name');
+
+      if (filters.statusFilter && filters.statusFilter !== 'all') {
+        query = query.eq('status', filters.statusFilter);
+      }
+
+      if (filters.searchTerm) {
+        query = query.ilike('name', `%${filters.searchTerm}%`);
+      }
+
+      const { data, error } = await query;
       
       if (error) throw error;
       return data as Client[];

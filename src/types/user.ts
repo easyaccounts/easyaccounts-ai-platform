@@ -1,7 +1,7 @@
 
 export type UserGroup = 'accounting_firm' | 'business_owner';
 
-export type UserRole = 'partner' | 'senior' | 'staff' | 'client' | 'management' | 'accounting_team';
+export type UserRole = 'partner' | 'senior_staff' | 'staff' | 'client' | 'management' | 'accounting_team';
 
 export interface UserProfile {
   id: string;

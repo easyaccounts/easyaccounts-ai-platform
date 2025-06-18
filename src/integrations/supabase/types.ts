@@ -1392,38 +1392,6 @@ export type Database = {
           },
         ]
       }
-      user_assignments: {
-        Row: {
-          assigned_by: string
-          client_id: string
-          created_at: string
-          id: string
-          user_id: string
-        }
-        Insert: {
-          assigned_by: string
-          client_id: string
-          created_at?: string
-          id?: string
-          user_id: string
-        }
-        Update: {
-          assigned_by?: string
-          client_id?: string
-          created_at?: string
-          id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "user_assignments_client_id_fkey"
-            columns: ["client_id"]
-            isOneToOne: false
-            referencedRelation: "clients"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       user_sessions: {
         Row: {
           id: string

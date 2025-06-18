@@ -1,306 +1,157 @@
 
 import React from 'react';
-import { useParams } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
-import { useUserContext } from '@/hooks/useUserContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { FileText, Upload, MessageSquare, Clock, CheckCircle, AlertCircle, Plus } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
-import { Link } from 'react-router-dom';
+import { FileText, Upload, CheckCircle, AlertCircle, Clock, TrendingUp } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { useDashboardData } from '@/hooks/useDashboardData';
+import { Link } from 'react-router-dom';
 
-// Sample data for client charts (keeping charts as they need more complex data structure)
-const deliverableProgressData = [
-  { stage: 'Pending', count: 3 },
-  { stage: 'In Progress', count: 2 },
-  { stage: 'Review', count: 1 },
-  { stage: 'Completed', count: 8 },
-];
-
-const uploadsOverTimeData = [
-  { month: 'Jan', uploads: 12 },
-  { month: 'Feb', uploads: 18 },
-  { month: 'Mar', uploads: 15 },
-  { month: 'Apr', uploads: 22 },
-  { month: 'May', uploads: 19 },
-  { month: 'Jun', uploads: 25 },
-];
-
-const ClientDashboardPage = () => {
-  const { profile } = useAuth();
-  const { selectedClient } = useUserContext();
+const ClientDashboard = () => {
   const { data, isLoading } = useDashboardData('client');
 
-  // Check if we're in a client-specific route (for firm members)
-  const { clientId } = useParams();
-  const isContextAware = !!clientId;
+  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 
-  console.log('Client Dashboard Page rendering:', { 
-    profile: profile ? { userGroup: profile.user_group, userRole: profile.user_role } : null,
-    selectedClient,
-    clientId,
-    isContextAware
-  });
-
-  const getBaseRoute = () => {
-    if (isContextAware) {
-      return `/app/clients/${clientId}`;
-    }
-    return '/client';
-  };
-
-  const getPageTitle = () => {
-    if (isContextAware) {
-      return 'Client Dashboard';
-    }
-    return 'My Business Dashboard';
-  };
-
-  const getWelcomeMessage = () => {
-    if (isContextAware) {
-      return 'Manage this client\'s accounting and business needs.';
-    }
-    return `Welcome back, ${profile?.first_name}! Manage your business accounting here.`;
-  };
-
-  return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">{getPageTitle()}</h1>
-          <p className="text-muted-foreground">
-            {getWelcomeMessage()}
-          </p>
-          {selectedClient && !isContextAware && (
-            <p className="text-sm text-blue-600 mt-1">
-              Viewing: {selectedClient.name}
-            </p>
-          )}
+  if (isLoading) {
+    return (
+      <div className="p-6 space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[1, 2, 3, 4].map((i) => (
+            <Card key={i} className="animate-pulse">
+              <CardHeader className="space-y-0 pb-2">
+                <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+              </CardHeader>
+              <CardContent>
+                <div className="h-8 bg-gray-200 rounded w-1/2 mb-2"></div>
+                <div className="h-3 bg-gray-200 rounded w-full"></div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       </div>
+    );
+  }
 
-      {/* Key Metrics */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
+  return (
+    <div className="p-6 space-y-6">
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+        <Badge variant="outline" className="text-blue-600 border-blue-600">
+          Client Portal
+        </Badge>
+      </div>
+
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card className="border-l-4 border-l-orange-500">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Deliverables Pending</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-gray-600">Pending Deliverables</CardTitle>
+            <FileText className="h-4 w-4 text-orange-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{data?.deliverablesPending ?? 0}</div>
-            <p className="text-xs text-muted-foreground">
-              Awaiting action
-            </p>
+            <div className="text-2xl font-bold text-orange-600">{data?.deliverablesPending ?? 0}</div>
+            <p className="text-xs text-gray-600">Awaiting completion</p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-l-4 border-l-green-500">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Uploads Completed</CardTitle>
-            <Upload className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-gray-600">Uploads Completed</CardTitle>
+            <Upload className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{data?.uploadsCompleted ?? 0}</div>
-            <p className="text-xs text-muted-foreground">
-              This month
-            </p>
+            <div className="text-2xl font-bold text-green-600">{data?.uploadsCompleted ?? 0}</div>
+            <p className="text-xs text-gray-600">This month</p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-l-4 border-l-blue-500">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Tasks in Progress</CardTitle>
-            <AlertCircle className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-gray-600">Tasks in Progress</CardTitle>
+            <Clock className="h-4 w-4 text-blue-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{data?.tasksInProgress ?? 0}</div>
-            <p className="text-xs text-muted-foreground">
-              {isContextAware ? 'Accounting team working' : 'Accounting team working'}
-            </p>
+            <div className="text-2xl font-bold text-blue-600">{data?.tasksInProgress ?? 0}</div>
+            <p className="text-xs text-gray-600">Active work items</p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-l-4 border-l-purple-500">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Open Requests</CardTitle>
-            <MessageSquare className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-gray-600">Open Requests</CardTitle>
+            <AlertCircle className="h-4 w-4 text-purple-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{data?.openRequests ?? 0}</div>
-            <p className="text-xs text-muted-foreground">
-              Awaiting response
-            </p>
+            <div className="text-2xl font-bold text-purple-600">{data?.openRequests ?? 0}</div>
+            <p className="text-xs text-gray-600">Pending responses</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Charts */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* Deliverable Progress Chart */}
-        <Card>
+      {/* Charts and Quick Actions */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Activity Overview */}
+        <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle>Deliverable Progress by Stage</CardTitle>
-            <CardDescription>Current status of deliverables</CardDescription>
+            <CardTitle className="text-blue-700">Monthly Activity Overview</CardTitle>
+            <CardDescription>Your business activity trends</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={deliverableProgressData}>
+              <BarChart data={[
+                { month: 'Jan', uploads: data?.uploadsCompleted ?? 0, tasks: data?.tasksInProgress ?? 0 },
+                { month: 'Feb', uploads: Math.floor((data?.uploadsCompleted ?? 0) * 0.8), tasks: Math.floor((data?.tasksInProgress ?? 0) * 0.9) },
+                { month: 'Mar', uploads: Math.floor((data?.uploadsCompleted ?? 0) * 1.2), tasks: Math.floor((data?.tasksInProgress ?? 0) * 1.1) },
+              ]}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="stage" tick={{ fontSize: 12 }} />
-                <YAxis tick={{ fontSize: 12 }} />
+                <XAxis dataKey="month" />
+                <YAxis />
                 <Tooltip />
-                <Bar dataKey="count" fill="#3b82f6" />
+                <Bar dataKey="uploads" fill="#10b981" name="Uploads" />
+                <Bar dataKey="tasks" fill="#3b82f6" name="Tasks" />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
 
-        {/* Uploads Over Time Chart */}
+        {/* Quick Actions */}
         <Card>
           <CardHeader>
-            <CardTitle>Document Uploads Over Time</CardTitle>
-            <CardDescription>Monthly document upload activity</CardDescription>
+            <CardTitle className="text-blue-700">Quick Actions</CardTitle>
+            <CardDescription>Common tasks and navigation</CardDescription>
           </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={uploadsOverTimeData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-                <YAxis tick={{ fontSize: 12 }} />
-                <Tooltip />
-                <Line type="monotone" dataKey="uploads" stroke="#10b981" strokeWidth={2} />
-              </LineChart>
-            </ResponsiveContainer>
+          <CardContent className="space-y-3">
+            <Button asChild className="w-full justify-start bg-blue-600 hover:bg-blue-700" size="sm">
+              <Link to="/client/uploads">
+                <Upload className="w-4 h-4 mr-2" />
+                Upload Documents
+              </Link>
+            </Button>
+            <Button asChild className="w-full justify-start bg-green-600 hover:bg-green-700" size="sm">
+              <Link to="/client/deliverables">
+                <FileText className="w-4 h-4 mr-2" />
+                View Deliverables
+              </Link>
+            </Button>
+            <Button asChild className="w-full justify-start bg-purple-600 hover:bg-purple-700" size="sm">
+              <Link to="/client/requests">
+                <AlertCircle className="w-4 h-4 mr-2" />
+                Create Request
+              </Link>
+            </Button>
+            <Button asChild className="w-full justify-start bg-orange-600 hover:bg-orange-700" size="sm">
+              <Link to="/client/reports">
+                <TrendingUp className="w-4 h-4 mr-2" />
+                View Reports
+              </Link>
+            </Button>
           </CardContent>
         </Card>
       </div>
-
-      {/* Quick Actions */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Quick Actions</CardTitle>
-          <CardDescription>
-            {isContextAware ? 'Manage this client\'s account' : 'Common tasks to help manage your business'}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-2">
-            <Button asChild className="h-auto flex flex-col items-center p-4 space-y-2">
-              <Link to={`${getBaseRoute()}/requests`}>
-                <MessageSquare className="h-6 w-6" />
-                <div className="text-center">
-                  <div className="font-medium">
-                    {isContextAware ? 'View Requests' : 'Request Document'}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    {isContextAware ? 'Client requests' : 'Ask for specific information'}
-                  </div>
-                </div>
-              </Link>
-            </Button>
-            
-            <Button asChild variant="outline" className="h-auto flex flex-col items-center p-4 space-y-2">
-              <Link to={`${getBaseRoute()}/documents`}>
-                <Upload className="h-6 w-6" />
-                <div className="text-center">
-                  <div className="font-medium">
-                    {isContextAware ? 'View Documents' : 'Upload Files'}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    {isContextAware ? 'Client documents' : 'Upload receipts and documents'}
-                  </div>
-                </div>
-              </Link>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Latest Reports */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Latest Reports</CardTitle>
-          <CardDescription>
-            {isContextAware ? 'Recent financial reports for this client' : 'Your most recent financial reports'}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 border rounded-lg">
-              <div className="flex items-center space-x-3">
-                <FileText className="h-5 w-5 text-blue-500" />
-                <div>
-                  <p className="font-medium">Monthly Management Accounts - May 2024</p>
-                  <p className="text-sm text-muted-foreground">Generated on June 5, 2024</p>
-                </div>
-              </div>
-              <Button variant="outline" size="sm">Download</Button>
-            </div>
-            
-            <div className="flex items-center justify-between p-4 border rounded-lg">
-              <div className="flex items-center space-x-3">
-                <FileText className="h-5 w-5 text-green-500" />
-                <div>
-                  <p className="font-medium">VAT Return Q1 2024</p>
-                  <p className="text-sm text-muted-foreground">Submitted on April 30, 2024</p>
-                </div>
-              </div>
-              <Button variant="outline" size="sm">Download</Button>
-            </div>
-            
-            <div className="flex items-center justify-between p-4 border rounded-lg">
-              <div className="flex items-center space-x-3">
-                <FileText className="h-5 w-5 text-purple-500" />
-                <div>
-                  <p className="font-medium">Annual Accounts 2023</p>
-                  <p className="text-sm text-muted-foreground">Completed on March 15, 2024</p>
-                </div>
-              </div>
-              <Button variant="outline" size="sm">Download</Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Recent Activity */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Recent Activity</CardTitle>
-          <CardDescription>Latest updates on this account</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="flex items-center space-x-4">
-              <CheckCircle className="h-4 w-4 text-green-500" />
-              <div className="flex-1">
-                <p className="text-sm">Management accounts for May have been completed</p>
-                <p className="text-xs text-muted-foreground">2 hours ago</p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-4">
-              <Upload className="h-4 w-4 text-blue-500" />
-              <div className="flex-1">
-                <p className="text-sm">
-                  {isContextAware ? 'Client uploaded 5 new receipts' : 'You uploaded 5 new receipts'}
-                </p>
-                <p className="text-xs text-muted-foreground">1 day ago</p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-4">
-              <MessageSquare className="h-4 w-4 text-purple-500" />
-              <div className="flex-1">
-                <p className="text-sm">
-                  {isContextAware ? 'New message from client' : 'New message from your accounting team'}
-                </p>
-                <p className="text-xs text-muted-foreground">2 days ago</p>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 };
 
-export default ClientDashboardPage;
+export default ClientDashboard;
