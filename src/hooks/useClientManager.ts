@@ -46,7 +46,10 @@ export const useClientManager = (filters: ClientFilters = {}) => {
   const { data: clients = [], isLoading, error } = useQuery({
     queryKey: ['clients', profile?.firm_id, filters],
     queryFn: async () => {
-      if (!profile?.firm_id) return [];
+      if (!profile?.firm_id) {
+        console.log('No firm_id available for client query');
+        return [];
+      }
       
       let query = supabase
         .from('clients')
@@ -64,7 +67,10 @@ export const useClientManager = (filters: ClientFilters = {}) => {
 
       const { data, error } = await query;
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching clients:', error);
+        throw error;
+      }
       return data as Client[];
     },
     enabled: !!profile?.firm_id,
@@ -73,6 +79,8 @@ export const useClientManager = (filters: ClientFilters = {}) => {
   // Mutation for creating clients
   const createClientMutation = useMutation({
     mutationFn: async (clientData: CreateClientData) => {
+      console.log('Creating client with data:', clientData);
+      
       const { data, error } = await supabase
         .from('clients')
         .insert({
@@ -82,13 +90,16 @@ export const useClientManager = (filters: ClientFilters = {}) => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error creating client:', error);
+        throw error;
+      }
       return data;
     },
     onSuccess: () => {
       toast({
         title: 'Success',
-        description: UI_MESSAGES.SUCCESS_CREATED,
+        description: 'Client created successfully',
       });
       queryClient.invalidateQueries({ queryKey: ['clients'] });
     },
@@ -96,7 +107,7 @@ export const useClientManager = (filters: ClientFilters = {}) => {
       console.error('Error creating client:', error);
       toast({
         title: 'Error',
-        description: error.message || UI_MESSAGES.ERROR_GENERIC,
+        description: error.message || 'Failed to create client',
         variant: 'destructive',
       });
     },

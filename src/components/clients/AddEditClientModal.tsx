@@ -138,6 +138,12 @@ const AddEditClientModal = ({
       return;
     }
 
+    console.log('Submitting client data:', {
+      ...formData,
+      firm_id: activeFirmId,
+      monthly_fee: formData.monthly_fee ? parseFloat(formData.monthly_fee) : 0,
+    });
+
     try {
       await onSubmit({
         id: client?.id,
@@ -146,21 +152,11 @@ const AddEditClientModal = ({
         monthly_fee: formData.monthly_fee ? parseFloat(formData.monthly_fee) : 0,
       });
 
-      toast({
-        title: 'Success',
-        description: client ? 'Client updated successfully' : 'Client added successfully',
-      });
-
       onClientSaved();
-      onClose();
       resetForm();
     } catch (error: any) {
       console.error('Error saving client:', error);
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to save client',
-        variant: 'destructive',
-      });
+      // Error is handled in the mutation
     }
   };
 

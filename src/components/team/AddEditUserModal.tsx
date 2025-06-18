@@ -109,6 +109,13 @@ const AddEditUserModal = ({
       return;
     }
 
+    console.log('Submitting team member data:', {
+      ...formData,
+      firm_id: activeFirmId,
+      user_group: 'accounting_firm',
+      selectedClients,
+    });
+
     try {
       await onSubmit({
         id: user?.id,
@@ -118,21 +125,11 @@ const AddEditUserModal = ({
         selectedClients,
       });
 
-      toast({
-        title: 'Success',
-        description: user ? 'Team member updated successfully' : 'Team member added successfully',
-      });
-
       onUserUpdated();
-      onClose();
       resetForm();
     } catch (error: any) {
       console.error('Error saving user:', error);
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to save team member',
-        variant: 'destructive',
-      });
+      // Error is handled in the mutation
     }
   };
 
@@ -247,7 +244,7 @@ const AddEditUserModal = ({
               Cancel
             </Button>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? UI_MESSAGES.SAVING : user ? 'Update Team Member' : 'Add Team Member'}
+              {isSubmitting ? 'Saving...' : user ? 'Update Team Member' : 'Add Team Member'}
             </Button>
           </div>
         </form>

@@ -41,8 +41,10 @@ export const UserContextProvider = ({ children }: { children: ReactNode }) => {
 
   const initializeUserContext = async () => {
     try {
-      // Fetch available clients
-      await fetchAvailableClients();
+      // Only fetch clients if we have a valid firm_id
+      if (profile?.firm_id) {
+        await fetchAvailableClients();
+      }
       
       // Fetch current view mode
       await fetchViewMode();
@@ -59,7 +61,10 @@ export const UserContextProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const fetchAvailableClients = async () => {
-    if (!profile) return;
+    if (!profile?.firm_id) {
+      console.log('No firm_id available, skipping client fetch');
+      return;
+    }
 
     try {
       let clientsData: Client[] = [];
@@ -87,14 +92,16 @@ export const UserContextProvider = ({ children }: { children: ReactNode }) => {
         clientsData = assignments?.map(a => a.client).filter(Boolean) || [];
       } else if (profile.user_role === 'client') {
         // Clients can only see their own record
-        const { data, error } = await supabase
-          .from('clients')
-          .select('*')
-          .eq('id', profile.business_id)
-          .order('name');
+        if (profile.business_id) {
+          const { data, error } = await supabase
+            .from('clients')
+            .select('*')
+            .eq('id', profile.business_id)
+            .order('name');
 
-        if (error) throw error;
-        clientsData = data || [];
+          if (error) throw error;
+          clientsData = data || [];
+        }
       } else if (profile.user_group === 'business_owner') {
         // Business owners see their own business as a client
         if (profile.business_id) {
@@ -115,11 +122,13 @@ export const UserContextProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const fetchViewMode = async () => {
+    if (!user?.id) return;
+    
     try {
       const { data, error } = await supabase
         .from('user_sessions')
         .select('view_mode')
-        .eq('user_id', user?.id)
+        .eq('user_id', user.id)
         .maybeSingle();
 
       if (error && error.code !== 'PGRST116') {
@@ -133,6 +142,8 @@ export const UserContextProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const setCurrentView = async (view: 'firm' | 'client') => {
+    if (!user?.id) return;
+    
     try {
       const { error } = await supabase.rpc('set_user_view_mode', {
         new_mode: view

@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -49,7 +50,10 @@ export const useTeamManager = () => {
   const { data: teamMembers = [], isLoading: loadingTeam } = useQuery({
     queryKey: ['team-members', profile?.firm_id],
     queryFn: async () => {
-      if (!profile?.firm_id) return [];
+      if (!profile?.firm_id) {
+        console.log('No firm_id available for team query');
+        return [];
+      }
       
       const { data, error } = await supabase
         .from('profiles')
@@ -57,7 +61,10 @@ export const useTeamManager = () => {
         .eq('firm_id', profile.firm_id)
         .order('created_at', { ascending: false });
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching team members:', error);
+        throw error;
+      }
       return data as TeamMember[];
     },
     enabled: !!profile?.firm_id,
@@ -66,7 +73,10 @@ export const useTeamManager = () => {
   const { data: clients = [], isLoading: loadingClients } = useQuery({
     queryKey: ['firm-clients', profile?.firm_id],
     queryFn: async () => {
-      if (!profile?.firm_id) return [];
+      if (!profile?.firm_id) {
+        console.log('No firm_id available for clients query');
+        return [];
+      }
       
       const { data, error } = await supabase
         .from('clients')
@@ -74,7 +84,10 @@ export const useTeamManager = () => {
         .eq('firm_id', profile.firm_id)
         .order('name');
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching clients:', error);
+        throw error;
+      }
       return data as Client[];
     },
     enabled: !!profile?.firm_id,
@@ -103,6 +116,8 @@ export const useTeamManager = () => {
   // Mutation for creating team members
   const createTeamMemberMutation = useMutation({
     mutationFn: async ({ selectedClients = [], ...memberData }: CreateTeamMemberData) => {
+      console.log('Creating team member with data:', memberData);
+      
       const newUserId = crypto.randomUUID();
       
       const { error } = await supabase
@@ -119,7 +134,10 @@ export const useTeamManager = () => {
           status: memberData.status,
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error creating team member:', error);
+        throw error;
+      }
       
       // Create assignments for the new user using team_client_assignments
       if (selectedClients.length > 0) {
@@ -133,7 +151,10 @@ export const useTeamManager = () => {
           .from('team_client_assignments')
           .insert(assignments);
 
-        if (assignmentError) throw assignmentError;
+        if (assignmentError) {
+          console.error('Error creating assignments:', assignmentError);
+          throw assignmentError;
+        }
       }
 
       return newUserId;
@@ -150,7 +171,7 @@ export const useTeamManager = () => {
       console.error('Error creating team member:', error);
       toast({
         title: 'Error',
-        description: error.message || UI_MESSAGES.ERROR_GENERIC,
+        description: error.message || 'Failed to create team member',
         variant: 'destructive',
       });
     },
