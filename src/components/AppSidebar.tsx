@@ -1,6 +1,6 @@
 
-import { Home, Users, FileText, Settings, UserCheck, Upload, CheckSquare, Building2, BarChart3, MessageSquare, LogOut, ArrowLeftRight } from "lucide-react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Home, Users, FileText, Settings, UserCheck, Upload, CheckSquare, Building2, BarChart3, MessageSquare, LogOut } from "lucide-react";
+import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserContext } from "@/hooks/useUserContext";
 import {
@@ -20,28 +20,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 const AppSidebar = () => {
   const location = useLocation();
-  const navigate = useNavigate();
   const { profile, signOut } = useAuth();
-  const { currentView, loading, setCurrentView, availableClients, currentClientId, setCurrentClient } = useUserContext();
+  const { currentView, loading, availableClients, currentClientId, setCurrentClient } = useUserContext();
 
   const handleSignOut = async () => {
     await signOut();
-  };
-
-  const handleViewToggle = async () => {
-    const newView = currentView === 'firm' ? 'client' : 'firm';
-    await setCurrentView(newView);
-    
-    if (newView === 'client') {
-      // If switching to client view and no client selected, go to select-client page
-      if (!currentClientId) {
-        navigate('/app/select-client');
-      } else {
-        navigate('/client/dashboard');
-      }
-    } else {
-      navigate('/app/dashboard');
-    }
   };
 
   // Show loading skeleton while context loads
@@ -70,40 +53,41 @@ const AppSidebar = () => {
     );
   }
 
-  // Get navigation items based on current view
-  const getNavigationItems = () => {
-    if (currentView === 'client') {
-      // Client View Items - only show if client is selected
-      if (!currentClientId) return [];
-      
-      return [
-        { title: "Dashboard", url: "/client/dashboard", icon: Home },
-        { title: "Deliverables", url: "/client/deliverables", icon: FileText },
-        { title: "Reports", url: "/client/reports", icon: BarChart3 },
-        { title: "Requests", url: "/client/requests", icon: MessageSquare },
-        { title: "Transactions", url: "/client/transactions", icon: Upload },
-        { title: "Uploads", url: "/client/uploads", icon: Upload },
-        { title: "Settings", url: "/client/settings", icon: Settings },
-      ];
-    } else {
-      // Firm View Items
-      const baseItems = [
-        { title: "Dashboard", url: "/app/dashboard", icon: Home },
+  // Get navigation items based on current view and user role
+  const getFirmNavigationItems = () => {
+    const baseItems = [
+      { title: "Dashboard", url: "/app/dashboard", icon: Home },
+    ];
+
+    // Add firm management items for partners
+    if (profile.user_role === 'partner') {
+      baseItems.push(
         { title: "Clients", url: "/app/clients", icon: Building2 },
-        { title: "Team", url: "/app/team", icon: Users },
         { title: "Assign Clients", url: "/app/assign-clients", icon: UserCheck },
-      ];
-
-      // Add settings for partners and management
-      if (['partner', 'management'].includes(profile.user_role)) {
-        baseItems.push({ title: "Settings", url: "/app/settings", icon: Settings });
-      }
-
-      return baseItems;
+        { title: "Team", url: "/app/team", icon: Users },
+        { title: "Settings", url: "/app/settings", icon: Settings }
+      );
     }
+
+    return baseItems;
   };
 
-  const navigationItems = getNavigationItems();
+  const getClientNavigationItems = () => {
+    // Only show client items if a client is selected
+    if (!currentClientId) return [];
+    
+    return [
+      { title: "Dashboard", url: "/client/dashboard", icon: Home },
+      { title: "Deliverables", url: "/client/deliverables", icon: FileText },
+      { title: "Reports", url: "/client/reports", icon: BarChart3 },
+      { title: "Requests", url: "/client/requests", icon: MessageSquare },
+      { title: "Transactions", url: "/client/transactions", icon: Upload },
+      { title: "Uploads", url: "/client/uploads", icon: Upload },
+      { title: "Settings", url: "/client/settings", icon: Settings },
+    ];
+  };
+
+  const navigationItems = currentView === 'client' ? getClientNavigationItems() : getFirmNavigationItems();
 
   return (
     <Sidebar>
@@ -119,21 +103,6 @@ const AppSidebar = () => {
             </p>
           </div>
         </div>
-
-        {/* View Toggle for Partners */}
-        {profile.user_role === 'partner' && (
-          <div className="mt-4">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleViewToggle}
-              className="w-full justify-start"
-            >
-              <ArrowLeftRight className="h-4 w-4 mr-2" />
-              Switch to {currentView === 'firm' ? 'Client' : 'Firm'} View
-            </Button>
-          </div>
-        )}
 
         {/* Client Selector for Client View */}
         {currentView === 'client' && availableClients.length > 0 && (
@@ -177,6 +146,17 @@ const AppSidebar = () => {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {/* Show message when in client view but no client selected */}
+        {currentView === 'client' && !currentClientId && (
+          <SidebarGroup>
+            <SidebarGroupContent>
+              <div className="p-4 text-center text-sm text-muted-foreground">
+                Please select a client to view navigation options
+              </div>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
 
       <SidebarFooter className="border-t p-4">
