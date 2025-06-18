@@ -1,12 +1,11 @@
 
 import { Outlet } from "react-router-dom";
-import { SidebarProvider, SidebarInset, SidebarTrigger, Sidebar } from "@/components/ui/sidebar";
+import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserContext } from "@/hooks/useUserContext";
 import ClientViewBanner from "@/components/ClientViewBanner";
-import ViewModeToggle from "@/components/ViewModeToggle";
-import NotificationDropdown from "@/components/notifications/NotificationDropdown";
-import { Separator } from "@/components/ui/separator";
+import AppSidebar from "@/components/AppSidebar";
+import AppHeader from "@/components/AppHeader";
 
 export default function AppLayout() {
   const { user } = useAuth();
@@ -34,20 +33,9 @@ export default function AppLayout() {
   console.log('AppLayout: Rendering main layout');
   return (
     <SidebarProvider>
-      <Sidebar />
+      <AppSidebar />
       <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
-          <SidebarTrigger className="-ml-1" />
-          <Separator orientation="vertical" className="mr-2 h-4" />
-          <div className="flex flex-1 items-center justify-between">
-            <div className="flex items-center gap-2">
-              <ViewModeToggle />
-            </div>
-            <div className="flex items-center gap-2">
-              <NotificationDropdown />
-            </div>
-          </div>
-        </header>
+        <AppHeader />
         
         {currentView === 'client' && <ClientViewBanner />}
         
