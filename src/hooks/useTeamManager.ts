@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -121,16 +122,16 @@ export const useTeamManager = () => {
 
       if (error) throw error;
       
-      // Create assignments for the new user
+      // Create assignments for the new user using team_client_assignments
       if (selectedClients.length > 0) {
         const assignments = selectedClients.map(clientId => ({
-          user_id: newUserId,
+          team_member_id: newUserId,
           client_id: clientId,
           assigned_by: profile?.id,
         }));
 
         const { error: assignmentError } = await supabase
-          .from('user_assignments')
+          .from('team_client_assignments')
           .insert(assignments);
 
         if (assignmentError) throw assignmentError;
@@ -172,25 +173,25 @@ export const useTeamManager = () => {
 
       if (error) throw error;
 
-      // Update assignments
+      // Update assignments using team_client_assignments
       // Delete existing assignments
       const { error: deleteError } = await supabase
-        .from('user_assignments')
+        .from('team_client_assignments')
         .delete()
-        .eq('user_id', id);
+        .eq('team_member_id', id);
 
       if (deleteError) throw deleteError;
 
       // Insert new assignments
       if (selectedClients.length > 0) {
         const assignments = selectedClients.map(clientId => ({
-          user_id: id,
+          team_member_id: id,
           client_id: clientId,
           assigned_by: profile?.id,
         }));
 
         const { error: assignmentError } = await supabase
-          .from('user_assignments')
+          .from('team_client_assignments')
           .insert(assignments);
 
         if (assignmentError) throw assignmentError;

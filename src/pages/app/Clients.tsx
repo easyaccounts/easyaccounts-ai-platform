@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useClientManager } from '@/hooks/useClientManager';
 import AddEditClientModal from '@/components/clients/AddEditClientModal';
-import TableSkeleton from '@/components/ui/table-skeleton';
+import { TableSkeleton } from '@/components/ui/table-skeleton';
 
 const Clients = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -55,7 +55,7 @@ const Clients = () => {
             Add Client
           </Button>
         </div>
-        <TableSkeleton />
+        <TableSkeleton columns={4} />
       </div>
     );
   }
@@ -161,7 +161,7 @@ const Clients = () => {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         client={selectedClient}
-        onSave={selectedClient ? updateClient : createClient}
+        onSubmit={selectedClient ? updateClient : createClient}
         isLoading={isCreating || isUpdating}
       />
     </div>
