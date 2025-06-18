@@ -37,9 +37,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           }, 0);
         } else {
           setProfile(null);
+          setLoading(false);
         }
-        
-        setLoading(false);
       }
     );
 
@@ -53,9 +52,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setTimeout(() => {
           fetchUserProfile(session.user.id);
         }, 0);
+      } else {
+        setLoading(false);
       }
-      
-      setLoading(false);
     });
 
     return () => subscription.unsubscribe();
@@ -63,6 +62,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchUserProfile = async (userId: string) => {
     try {
+      console.log('Fetching profile for user:', userId);
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -71,12 +71,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (error) {
         console.error('Error fetching profile:', error);
+        setProfile(null);
       } else {
-        console.log('Profile fetched:', data?.user_role);
+        console.log('Profile fetched successfully:', { 
+          userGroup: data?.user_group, 
+          userRole: data?.user_role,
+          firstName: data?.first_name 
+        });
         setProfile(data);
       }
     } catch (error) {
-      console.error('Error fetching profile:', error);
+      console.error('Unexpected error fetching profile:', error);
+      setProfile(null);
+    } finally {
+      setLoading(false);
     }
   };
 

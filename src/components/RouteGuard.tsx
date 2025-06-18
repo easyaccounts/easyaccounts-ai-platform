@@ -15,7 +15,7 @@ const RouteGuard = ({ children }: RouteGuardProps) => {
   const [isChecking, setIsChecking] = useState(true);
 
   const getRoleDashboard = (userGroup: string, userRole: string) => {
-    console.log('Determining dashboard for:', { userGroup, userRole });
+    console.log('RouteGuard: Determining dashboard for:', { userGroup, userRole });
     
     // Business owners (client group) go to client dashboard
     if (userGroup === 'business_owner') {
@@ -32,12 +32,14 @@ const RouteGuard = ({ children }: RouteGuardProps) => {
       }
     }
     
+    console.warn('RouteGuard: Unknown role configuration, defaulting to /app/dashboard');
     return '/app/dashboard'; // Default fallback
   };
 
   useEffect(() => {
     const checkAuthAndRedirect = () => {
       if (loading) {
+        console.log('RouteGuard: Still loading auth state');
         return;
       }
 
@@ -58,7 +60,7 @@ const RouteGuard = ({ children }: RouteGuardProps) => {
       // User is not authenticated
       if (!user || !profile) {
         if (isAppPath || isClientPath) {
-          console.log('Redirecting unauthenticated user to landing');
+          console.log('RouteGuard: Redirecting unauthenticated user to landing');
           navigate('/', { replace: true });
           return;
         }
@@ -72,7 +74,7 @@ const RouteGuard = ({ children }: RouteGuardProps) => {
         // If user is on public paths, redirect to their dashboard
         if (isPublicPath) {
           const dashboardPath = getRoleDashboard(profile.user_group, profile.user_role);
-          console.log(`Redirecting authenticated user from ${currentPath} to ${dashboardPath}`);
+          console.log(`RouteGuard: Redirecting authenticated user from ${currentPath} to ${dashboardPath}`);
           navigate(dashboardPath, { replace: true });
           return;
         }
@@ -83,7 +85,7 @@ const RouteGuard = ({ children }: RouteGuardProps) => {
           if (profile.user_group !== 'accounting_firm' || 
               !['partner', 'senior_staff', 'staff'].includes(profile.user_role)) {
             const correctDashboard = getRoleDashboard(profile.user_group, profile.user_role);
-            console.log(`Redirecting unauthorized user from ${currentPath} to ${correctDashboard}`);
+            console.log(`RouteGuard: Redirecting unauthorized user from ${currentPath} to ${correctDashboard}`);
             navigate(correctDashboard, { replace: true });
             return;
           }
@@ -97,12 +99,13 @@ const RouteGuard = ({ children }: RouteGuardProps) => {
           
           if (!allowedForClient) {
             const correctDashboard = getRoleDashboard(profile.user_group, profile.user_role);
-            console.log(`Redirecting unauthorized user from ${currentPath} to ${correctDashboard}`);
+            console.log(`RouteGuard: Redirecting unauthorized user from ${currentPath} to ${correctDashboard}`);
             navigate(correctDashboard, { replace: true });
             return;
           }
         }
         
+        console.log('RouteGuard: User authorized for current path');
         setIsChecking(false);
         return;
       }

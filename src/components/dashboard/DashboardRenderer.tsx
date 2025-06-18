@@ -8,7 +8,8 @@ import ClientOverview from './widgets/ClientOverview';
 import ManagementOverview from './widgets/ManagementOverview';
 import AccountingTeamOverview from './widgets/AccountingTeamOverview';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertTriangle, Loader2 } from 'lucide-react';
+import { AlertTriangle, Loader2, RefreshCw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 
@@ -19,6 +20,12 @@ interface DashboardRendererProps {
 }
 
 const DashboardRenderer: React.FC<DashboardRendererProps> = ({ profile, loading, error }) => {
+  console.log('DashboardRenderer rendering with:', { 
+    profile: profile ? { userGroup: profile.user_group, userRole: profile.user_role } : null,
+    loading,
+    error 
+  });
+
   // Loading state
   if (loading) {
     return (
@@ -33,6 +40,7 @@ const DashboardRenderer: React.FC<DashboardRendererProps> = ({ profile, loading,
 
   // Error state
   if (error) {
+    console.error('DashboardRenderer error:', error);
     return (
       <Card className="max-w-md mx-auto mt-8">
         <CardHeader>
@@ -46,12 +54,13 @@ const DashboardRenderer: React.FC<DashboardRendererProps> = ({ profile, loading,
         </CardHeader>
         <CardContent>
           <p className="text-sm text-gray-600 mb-4">{error}</p>
-          <button 
+          <Button 
             onClick={() => window.location.reload()} 
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors"
+            className="w-full"
           >
+            <RefreshCw className="w-4 h-4 mr-2" />
             Retry
-          </button>
+          </Button>
         </CardContent>
       </Card>
     );
@@ -59,6 +68,7 @@ const DashboardRenderer: React.FC<DashboardRendererProps> = ({ profile, loading,
 
   // Missing profile fallback
   if (!profile) {
+    console.error('DashboardRenderer: Profile is null');
     return (
       <Card className="max-w-md mx-auto mt-8">
         <CardHeader>
@@ -68,12 +78,12 @@ const DashboardRenderer: React.FC<DashboardRendererProps> = ({ profile, loading,
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <button 
+          <Button 
             onClick={() => window.location.href = '/auth'} 
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors"
+            className="w-full"
           >
             Return to Login
-          </button>
+          </Button>
         </CardContent>
       </Card>
     );
@@ -83,16 +93,19 @@ const DashboardRenderer: React.FC<DashboardRendererProps> = ({ profile, loading,
   const renderDashboard = () => {
     const { user_group, user_role } = profile;
 
-    console.log('Rendering dashboard for:', { user_group, user_role });
+    console.log('DashboardRenderer: Determining widget for:', { user_group, user_role });
 
     // Business Owner roles
     if (user_group === 'business_owner') {
       switch (user_role) {
         case 'management':
+          console.log('DashboardRenderer: Rendering ManagementOverview');
           return <ManagementOverview />;
         case 'accounting_team':
+          console.log('DashboardRenderer: Rendering AccountingTeamOverview');
           return <AccountingTeamOverview />;
         default:
+          console.log('DashboardRenderer: Rendering ClientOverview (business owner fallback)');
           return <ClientOverview />; // Fallback for business owners
       }
     }
@@ -101,19 +114,25 @@ const DashboardRenderer: React.FC<DashboardRendererProps> = ({ profile, loading,
     if (user_group === 'accounting_firm') {
       switch (user_role) {
         case 'partner':
+          console.log('DashboardRenderer: Rendering PartnerOverview');
           return <PartnerOverview />;
         case 'senior_staff':
+          console.log('DashboardRenderer: Rendering SeniorOverview');
           return <SeniorOverview />;
         case 'staff':
+          console.log('DashboardRenderer: Rendering StaffOverview');
           return <StaffOverview />;
         case 'client':
+          console.log('DashboardRenderer: Rendering ClientOverview');
           return <ClientOverview />;
         default:
+          console.log('DashboardRenderer: Rendering PartnerOverview (accounting firm fallback)');
           return <PartnerOverview />; // Fallback for accounting firms
       }
     }
 
-    // Ultimate fallback
+    // Ultimate fallback for unknown roles
+    console.error('DashboardRenderer: Unknown role configuration:', { user_group, user_role });
     return (
       <Card className="max-w-md mx-auto mt-8">
         <CardHeader>
@@ -127,19 +146,19 @@ const DashboardRenderer: React.FC<DashboardRendererProps> = ({ profile, loading,
             <p>User Group: {user_group}</p>
             <p>User Role: {user_role}</p>
           </div>
-          <button 
-            onClick={() => window.location.href = '/app/settings'} 
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors"
+          <Button 
+            onClick={() => window.location.href = '/auth'} 
+            className="w-full"
           >
-            Go to Settings
-          </button>
+            Return to Login
+          </Button>
         </CardContent>
       </Card>
     );
   };
 
   return (
-    <div className="fade-in">
+    <div className="fade-in p-6">
       {renderDashboard()}
     </div>
   );
