@@ -8,6 +8,7 @@ import { UserContextProvider } from "@/hooks/useUserContext";
 import RouteGuard from "@/components/RouteGuard";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import AppLayout from "@/components/AppLayout";
+import ClientLayout from "@/components/ClientLayout";
 import Index from "./pages/Index";
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
@@ -61,15 +62,19 @@ function App() {
                   }>
                     <Route index element={<Navigate to="/app/dashboard" replace />} />
                     <Route path="dashboard" element={<Dashboard />} />
+                    <Route path="select-client" element={<SelectClient />} />
                     <Route path="clients" element={<Clients />} />
                     <Route path="team" element={<TeamManagement />} />
                     <Route path="assign-clients" element={<AssignClients />} />
+                    <Route path="settings" element={<Settings />} />
                     <Route path="deliverables" element={<Deliverables />} />
                     <Route path="deliverables/:deliverableId/tasks" element={<DeliverableTasks />} />
                     <Route path="deliverables/:deliverableId/messages" element={<DeliverableMessages />} />
                     <Route path="my-tasks" element={<MyTasks />} />
+                    <Route path="tasks" element={<Tasks />} />
                     <Route path="reports" element={<Reports />} />
                     <Route path="requests" element={<Requests />} />
+                    <Route path="uploads" element={<Uploads />} />
                     <Route path="transactions" element={<Transactions />} />
                   </Route>
 
@@ -84,7 +89,10 @@ function App() {
                     <Route path="deliverables" element={<ClientDeliverables />} />
                     <Route path="reports" element={<ClientReports />} />
                     <Route path="requests" element={<ClientRequests />} />
+                    <Route path="transactions" element={<ClientTransactions />} />
+                    <Route path="uploads" element={<ClientUploads />} />
                     <Route path="documents" element={<ClientDocuments />} />
+                    <Route path="settings" element={<ClientSettings />} />
                   </Route>
 
                   <Route path="/404" element={<NotFound />} />
