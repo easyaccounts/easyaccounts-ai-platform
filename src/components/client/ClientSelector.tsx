@@ -3,10 +3,10 @@ import React from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Building2, User } from 'lucide-react';
-import { useClientContext } from '@/hooks/useClientContext';
+import { useUserContext } from '@/hooks/useUserContext';
 
 const ClientSelector = () => {
-  const { selectedClient, setSelectedClient, availableClients, loading } = useClientContext();
+  const { selectedClient, setSelectedClient, availableClients, loading } = useUserContext();
 
   if (loading) {
     return (

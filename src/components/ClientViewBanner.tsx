@@ -1,11 +1,11 @@
 
 import React from 'react';
-import { useClientContext } from '@/hooks/useClientContext';
+import { useUserContext } from '@/hooks/useUserContext';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { User } from 'lucide-react';
 
 const ClientViewBanner = () => {
-  const { selectedClient } = useClientContext();
+  const { selectedClient } = useUserContext();
 
   if (!selectedClient) return null;
 

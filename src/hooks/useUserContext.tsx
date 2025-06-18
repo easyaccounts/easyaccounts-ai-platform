@@ -12,10 +12,12 @@ interface UserContextType {
   currentView: 'firm' | 'client';
   firmId: string | null;
   currentClientId: string | null;
-  assignedClients: Client[];
+  selectedClient: Client | null;
+  availableClients: Client[];
   loading: boolean;
   setCurrentView: (view: 'firm' | 'client') => Promise<void>;
   setCurrentClient: (clientId: string | null) => void;
+  setSelectedClient: (client: Client | null) => void;
   canAccessClient: (clientId: string) => boolean;
 }
 
@@ -25,7 +27,8 @@ export const UserContextProvider = ({ children }: { children: ReactNode }) => {
   const { user, profile } = useAuth();
   const [currentView, setCurrentViewState] = useState<'firm' | 'client'>('firm');
   const [currentClientId, setCurrentClientId] = useState<string | null>(null);
-  const [assignedClients, setAssignedClients] = useState<Client[]>([]);
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [availableClients, setAvailableClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -38,8 +41,8 @@ export const UserContextProvider = ({ children }: { children: ReactNode }) => {
 
   const initializeUserContext = async () => {
     try {
-      // Fetch assigned clients
-      await fetchAssignedClients();
+      // Fetch available clients
+      await fetchAvailableClients();
       
       // Fetch current view mode
       await fetchViewMode();
@@ -55,7 +58,7 @@ export const UserContextProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const fetchAssignedClients = async () => {
+  const fetchAvailableClients = async () => {
     if (!profile) return;
 
     try {
@@ -82,6 +85,16 @@ export const UserContextProvider = ({ children }: { children: ReactNode }) => {
 
         if (error) throw error;
         clientsData = assignments?.map(a => a.client).filter(Boolean) || [];
+      } else if (profile.user_role === 'client') {
+        // Clients can only see their own record
+        const { data, error } = await supabase
+          .from('clients')
+          .select('*')
+          .eq('id', profile.business_id)
+          .order('name');
+
+        if (error) throw error;
+        clientsData = data || [];
       } else if (profile.user_group === 'business_owner') {
         // Business owners see their own business as a client
         if (profile.business_id) {
@@ -95,7 +108,7 @@ export const UserContextProvider = ({ children }: { children: ReactNode }) => {
         }
       }
 
-      setAssignedClients(clientsData);
+      setAvailableClients(clientsData);
     } catch (error) {
       console.error('Error fetching assigned clients:', error);
     }
@@ -142,7 +155,7 @@ export const UserContextProvider = ({ children }: { children: ReactNode }) => {
 
   const canAccessClient = (clientId: string): boolean => {
     if (profile?.user_role === 'partner') return true;
-    return assignedClients.some(client => client.id === clientId);
+    return availableClients.some(client => client.id === clientId);
   };
 
   return (
@@ -152,10 +165,12 @@ export const UserContextProvider = ({ children }: { children: ReactNode }) => {
       currentView,
       firmId: profile?.firm_id || null,
       currentClientId,
-      assignedClients,
+      selectedClient,
+      availableClients,
       loading,
       setCurrentView,
       setCurrentClient,
+      setSelectedClient,
       canAccessClient,
     }}>
       {children}
