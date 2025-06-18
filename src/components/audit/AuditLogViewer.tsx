@@ -117,7 +117,7 @@ const AuditLogViewer = ({ entityType, entityId }: AuditLogViewerProps) => {
                     
                     <div className="flex items-center text-sm text-muted-foreground mb-1">
                       <User className="w-3 h-3 mr-1" />
-                      {log.profiles?.first_name} {log.profiles?.last_name}
+                      {log.user_name || 'Unknown User'}
                     </div>
                     
                     {log.description && (
