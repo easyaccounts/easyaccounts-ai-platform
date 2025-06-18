@@ -110,12 +110,17 @@ export const useTeamManager = () => {
     },
   });
 
+  const refreshTeamMembers = () => {
+    queryClient.invalidateQueries({ queryKey: ['team-members', profile?.firm_id] });
+  };
+
   return {
     teamMembers,
     clients,
     assignments,
     isLoading: loadingTeam || loadingClients || loadingAssignments,
     assignClient: assignClientMutation.mutate,
-    isAssigning: assignClientMutation.isPending
+    isAssigning: assignClientMutation.isPending,
+    refreshTeamMembers
   };
 };
