@@ -1,134 +1,137 @@
 
-import React from 'react';
+import React, { useState } from 'react';
+import { useTeamManager } from '@/hooks/useTeamManager';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users, UserPlus, Settings, Mail } from 'lucide-react';
-import { useTeamManager } from '@/hooks/useTeamManager';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { Plus, Edit, Trash2, UserPlus } from 'lucide-react';
+import AddEditUserModal from '@/components/team/AddEditUserModal';
 
 const TeamManagement = () => {
   const { teamMembers, isLoading } = useTeamManager();
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
 
-  const getRoleStats = () => {
-    const partners = teamMembers.filter(m => m.user_role === 'partner').length;
-    const seniors = teamMembers.filter(m => m.user_role === 'senior_staff').length;
-    const staff = teamMembers.filter(m => m.user_role === 'staff').length;
-    
-    return { partners, seniors, staff };
+  const handleAddUser = () => {
+    setEditingUser(null);
+    setModalOpen(true);
   };
 
-  const stats = getRoleStats();
+  const handleEditUser = (user: any) => {
+    setEditingUser(user);
+    setModalOpen(true);
+  };
+
+  const handleModalClose = () => {
+    setModalOpen(false);
+    setEditingUser(null);
+  };
+
+  const getRoleColor = (role: string) => {
+    switch (role) {
+      case 'partner': return 'default';
+      case 'senior_staff': return 'secondary';
+      case 'staff': return 'outline';
+      default: return 'outline';
+    }
+  };
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">Team Management</h1>
+          <h1 className="text-2xl font-bold">Team Management</h1>
           <p className="text-muted-foreground">
-            Manage your accounting firm's team members
+            Manage your firm's team members and their roles
           </p>
         </div>
-        <Button>
-          <UserPlus className="w-4 h-4 mr-2" />
+        <Button onClick={handleAddUser}>
+          <Plus className="w-4 h-4 mr-2" />
           Add Team Member
         </Button>
       </div>
 
-      <div className="grid gap-6">
-        {/* Team Overview */}
-        <div className="grid gap-4 md:grid-cols-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Team Members</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{teamMembers.length}</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Partners</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.partners}</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Senior Staff</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.seniors}</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Staff</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.staff}</div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Team Members List */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Team Members</CardTitle>
-            <CardDescription>Manage your team members and their permissions</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="text-center py-8">Loading team members...</div>
-            ) : teamMembers.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                No team members found.
-              </div>
-            ) : (
-              <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle>Team Members</CardTitle>
+          <CardDescription>All team members in your firm</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="text-center py-8">Loading team members...</div>
+          ) : teamMembers.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              No team members found. Add your first team member to get started.
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Role</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Joined</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {teamMembers.map((member) => (
-                  <div key={member.id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-center space-x-4">
-                      <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                        <span className="text-blue-600 font-medium">
-                          {member.first_name?.[0]}{member.last_name?.[0]}
-                        </span>
-                      </div>
+                  <TableRow key={member.id}>
+                    <TableCell>
                       <div>
-                        <p className="font-medium">{member.first_name} {member.last_name}</p>
-                        <p className="text-sm text-muted-foreground capitalize">
-                          {member.user_role.replace('_', ' ')}
-                        </p>
-                        <p className="text-xs text-muted-foreground flex items-center">
-                          <Mail className="w-3 h-3 mr-1" />
-                          {member.email}
-                        </p>
+                        <div className="font-medium">
+                          {member.first_name} {member.last_name}
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <span className={`px-2 py-1 rounded text-xs ${
-                        member.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                      }`}>
+                    </TableCell>
+                    <TableCell>{member.email}</TableCell>
+                    <TableCell>
+                      <Badge variant={getRoleColor(member.user_role)}>
+                        {member.user_role.replace('_', ' ')}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={member.status === 'active' ? 'default' : 'destructive'}>
                         {member.status}
-                      </span>
-                      <Button variant="outline" size="sm">
-                        <Settings className="w-3 h-3 mr-1" />
-                        Edit
-                      </Button>
-                    </div>
-                  </div>
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {new Date(member.created_at).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex space-x-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEditUser(member)}
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      <AddEditUserModal
+        isOpen={modalOpen}
+        onClose={handleModalClose}
+        user={editingUser}
+        onUserSaved={handleModalClose}
+      />
     </div>
   );
 };

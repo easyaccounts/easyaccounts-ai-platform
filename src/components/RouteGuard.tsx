@@ -47,12 +47,14 @@ const RouteGuard = ({ children }: RouteGuardProps) => {
       const isPublicPath = ['/', '/landing', '/auth'].includes(currentPath);
       const isAppPath = currentPath.startsWith('/app');
       const isClientPath = currentPath.startsWith('/client');
+      const isClientSpecificPath = currentPath.startsWith('/app/clients/') && currentPath.includes('/dashboard');
 
       console.log('RouteGuard check:', { 
         currentPath, 
         isPublicPath, 
         isAppPath, 
         isClientPath, 
+        isClientSpecificPath,
         user: !!user, 
         profile: profile ? { userGroup: profile.user_group, userRole: profile.user_role } : null 
       });
@@ -80,8 +82,19 @@ const RouteGuard = ({ children }: RouteGuardProps) => {
         }
         
         // Check role-based access to protected routes
-        if (isAppPath) {
-          // Only allow firm members to access /app routes
+        if (isAppPath && !isClientSpecificPath) {
+          // Only allow firm members to access /app routes (except client-specific ones)
+          if (profile.user_group !== 'accounting_firm' || 
+              !['partner', 'senior_staff', 'staff'].includes(profile.user_role)) {
+            const correctDashboard = getRoleDashboard(profile.user_group, profile.user_role);
+            console.log(`RouteGuard: Redirecting unauthorized user from ${currentPath} to ${correctDashboard}`);
+            navigate(correctDashboard, { replace: true });
+            return;
+          }
+        }
+
+        if (isClientSpecificPath) {
+          // Only allow firm members to access client-specific routes
           if (profile.user_group !== 'accounting_firm' || 
               !['partner', 'senior_staff', 'staff'].includes(profile.user_role)) {
             const correctDashboard = getRoleDashboard(profile.user_group, profile.user_role);
@@ -94,8 +107,7 @@ const RouteGuard = ({ children }: RouteGuardProps) => {
         if (isClientPath) {
           // Allow business owners and client roles to access /client routes
           const allowedForClient = profile.user_group === 'business_owner' || 
-                                  profile.user_role === 'client' ||
-                                  ['management', 'accounting_team'].includes(profile.user_role);
+                                  profile.user_role === 'client';
           
           if (!allowedForClient) {
             const correctDashboard = getRoleDashboard(profile.user_group, profile.user_role);

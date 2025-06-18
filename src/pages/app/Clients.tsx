@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
@@ -15,7 +16,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Edit, Trash2, Search } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, Eye } from 'lucide-react';
 import { toast } from 'sonner';
 import { Database } from '@/integrations/supabase/types';
 import AddEditClientModal from '@/components/clients/AddEditClientModal';
@@ -24,6 +25,7 @@ type Client = Database['public']['Tables']['clients']['Row'];
 
 const Clients = () => {
   const { profile } = useAuth();
+  const navigate = useNavigate();
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -68,6 +70,10 @@ const Clients = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleViewClient = (clientId: string) => {
+    navigate(`/app/clients/${clientId}/dashboard`);
   };
 
   const handleAddClient = () => {
@@ -246,6 +252,13 @@ const Clients = () => {
                     </TableCell>
                     <TableCell>
                       <div className="flex space-x-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleViewClient(client.id)}
+                        >
+                          <Eye className="w-4 h-4" />
+                        </Button>
                         {canManageClients && (
                           <>
                             <Button

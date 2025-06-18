@@ -92,6 +92,11 @@ const AddEditClientModal = ({ isOpen, onClose, client, onClientSaved }: AddEditC
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!profile?.firm_id) {
+      toast.error('No firm ID available');
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -111,8 +116,8 @@ const AddEditClientModal = ({ isOpen, onClose, client, onClientSaved }: AddEditC
         monthly_fee: formData.monthly_fee ? parseFloat(formData.monthly_fee) : null,
         billing_cycle: formData.billing_cycle,
         status: formData.status,
-        firm_id: profile?.firm_id,
-        created_by: profile?.id
+        firm_id: profile.firm_id,
+        created_by: profile.id
       };
 
       if (client) {
@@ -135,6 +140,7 @@ const AddEditClientModal = ({ isOpen, onClose, client, onClientSaved }: AddEditC
       }
 
       onClientSaved();
+      onClose();
     } catch (error) {
       console.error('Error saving client:', error);
       toast.error('Failed to save client');

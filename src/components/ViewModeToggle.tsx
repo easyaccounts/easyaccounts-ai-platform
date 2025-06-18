@@ -1,79 +1,55 @@
 
 import React from 'react';
-import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Eye, Building2, User } from 'lucide-react';
-import { useUserContext } from '@/hooks/useUserContext';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { useNavigate } from 'react-router-dom';
-import ClientSelector from './client/ClientSelector';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Building2, Users } from 'lucide-react';
 
 const ViewModeToggle = () => {
   const { profile } = useAuth();
-  const { currentView, setCurrentView, loading } = useUserContext();
   const navigate = useNavigate();
+  const location = useLocation();
 
-  // Only show toggle for accounting firm users (chartered accountants)
+  // Only show for accounting firm users (not business owners)
   if (profile?.user_group !== 'accounting_firm') {
     return null;
   }
 
-  const handleViewChange = async (mode: 'firm' | 'client') => {
-    await setCurrentView(mode);
-    
-    // Redirect to appropriate dashboard
-    if (mode === 'firm') {
-      navigate('/app/dashboard');
+  const isClientView = location.pathname.startsWith('/app/clients/') || location.pathname === '/app/select-client';
+  const isFirmView = location.pathname.startsWith('/app/dashboard') || (!location.pathname.startsWith('/app/clients') && !location.pathname.startsWith('/client'));
+
+  const handleToggle = (checked: boolean) => {
+    if (checked) {
+      // Switch to client view - go to client selection
+      navigate('/app/select-client');
     } else {
-      navigate('/client/dashboard');
+      // Switch to firm view - go to main dashboard
+      navigate('/app/dashboard');
     }
   };
 
-  if (loading) {
-    return (
-      <Button variant="ghost" size="sm" disabled>
-        <Eye className="w-4 h-4 mr-2" />
-        Loading...
-      </Button>
-    );
-  }
-
   return (
-    <div className="flex items-center space-x-3">
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="sm" className="px-3 py-2">
-            {currentView === 'firm' ? (
-              <>
-                <Building2 className="w-4 h-4 mr-2" />
-                Firm View
-              </>
-            ) : (
-              <>
-                <User className="w-4 h-4 mr-2" />
-                Client View
-              </>
-            )}
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem onClick={() => handleViewChange('firm')}>
-            <Building2 className="w-4 h-4 mr-2" />
-            Firm View
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => handleViewChange('client')}>
-            <User className="w-4 h-4 mr-2" />
-            Client View
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+    <div className="flex items-center space-x-3 px-3 py-2 bg-gray-50 rounded-lg">
+      <div className="flex items-center space-x-2">
+        <Building2 className="w-4 h-4 text-blue-600" />
+        <Label htmlFor="view-toggle" className="text-sm font-medium">
+          Firm
+        </Label>
+      </div>
       
-      {currentView === 'client' && <ClientSelector />}
+      <Switch
+        id="view-toggle"
+        checked={isClientView}
+        onCheckedChange={handleToggle}
+      />
+      
+      <div className="flex items-center space-x-2">
+        <Users className="w-4 h-4 text-green-600" />
+        <Label htmlFor="view-toggle" className="text-sm font-medium">
+          Clients
+        </Label>
+      </div>
     </div>
   );
 };
