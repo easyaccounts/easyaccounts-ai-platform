@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { SessionContextProvider } from "@/hooks/useSessionContext";
 import { ClientContextProvider } from "@/hooks/useClientContext";
+import RouteGuard from "@/components/RouteGuard";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import AppLayout from "@/components/AppLayout";
 import Index from "./pages/Index";
@@ -36,30 +37,32 @@ function App() {
           <AuthProvider>
             <SessionContextProvider>
               <ClientContextProvider>
-                <Routes>
-                  <Route path="/" element={<Index />} />
-                  <Route path="/landing" element={<Landing />} />
-                  <Route path="/auth" element={<Auth />} />
-                  <Route path="/app" element={
-                    <ProtectedRoute>
-                      <AppLayout />
-                    </ProtectedRoute>
-                  }>
-                    <Route index element={<Dashboard />} />
-                    <Route path="clients" element={<Clients />} />
-                    <Route path="team" element={<TeamManagement />} />
-                    <Route path="assign-clients" element={<AssignClients />} />
-                    <Route path="deliverables" element={<Deliverables />} />
-                    <Route path="deliverables/:deliverableId/tasks" element={<DeliverableTasks />} />
-                    <Route path="deliverables/:deliverableId/messages" element={<DeliverableMessages />} />
-                    <Route path="my-tasks" element={<MyTasks />} />
-                    <Route path="reports" element={<Reports />} />
-                    <Route path="requests" element={<Requests />} />
-                    <Route path="transactions" element={<Transactions />} />
-                  </Route>
-                  <Route path="/404" element={<NotFound />} />
-                  <Route path="*" element={<Navigate to="/404" replace />} />
-                </Routes>
+                <RouteGuard>
+                  <Routes>
+                    <Route path="/" element={<Index />} />
+                    <Route path="/landing" element={<Landing />} />
+                    <Route path="/auth" element={<Auth />} />
+                    <Route path="/app" element={
+                      <ProtectedRoute>
+                        <AppLayout />
+                      </ProtectedRoute>
+                    }>
+                      <Route index element={<Dashboard />} />
+                      <Route path="clients" element={<Clients />} />
+                      <Route path="team" element={<TeamManagement />} />
+                      <Route path="assign-clients" element={<AssignClients />} />
+                      <Route path="deliverables" element={<Deliverables />} />
+                      <Route path="deliverables/:deliverableId/tasks" element={<DeliverableTasks />} />
+                      <Route path="deliverables/:deliverableId/messages" element={<DeliverableMessages />} />
+                      <Route path="my-tasks" element={<MyTasks />} />
+                      <Route path="reports" element={<Reports />} />
+                      <Route path="requests" element={<Requests />} />
+                      <Route path="transactions" element={<Transactions />} />
+                    </Route>
+                    <Route path="/404" element={<NotFound />} />
+                    <Route path="*" element={<Navigate to="/404" replace />} />
+                  </Routes>
+                </RouteGuard>
               </ClientContextProvider>
             </SessionContextProvider>
           </AuthProvider>

@@ -26,6 +26,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('Auth state change:', event, session?.user?.email);
         setSession(session);
         setUser(session?.user ?? null);
         
@@ -44,6 +45,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     // Check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('Initial session check:', session?.user?.email);
       setSession(session);
       setUser(session?.user ?? null);
       
@@ -70,6 +72,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (error) {
         console.error('Error fetching profile:', error);
       } else {
+        console.log('Profile fetched:', data?.user_role);
         setProfile(data);
       }
     } catch (error) {
@@ -79,14 +82,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signOut = async () => {
     setLoading(true);
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      console.error('Error signing out:', error);
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('Error signing out:', error);
+      } else {
+        console.log('User signed out successfully');
+        // State will be cleared by onAuthStateChange
+        // Redirect will be handled by RouteGuard
+      }
+    } catch (error) {
+      console.error('Unexpected error during sign out:', error);
+    } finally {
+      setLoading(false);
     }
-    setUser(null);
-    setSession(null);
-    setProfile(null);
-    setLoading(false);
   };
 
   return (

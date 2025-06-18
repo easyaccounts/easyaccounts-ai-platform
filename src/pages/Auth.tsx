@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -33,26 +32,9 @@ const Auth = () => {
   });
 
   useEffect(() => {
-    // Check if user is already logged in
-    const checkUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        navigate('/app');
-      }
-    };
-    checkUser();
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        if (session) {
-          navigate('/app');
-        }
-      }
-    );
-
-    return () => subscription.unsubscribe();
-  }, [navigate]);
+    // Note: RouteGuard will handle redirecting authenticated users
+    // No need to check auth state here
+  }, []);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -72,6 +54,7 @@ const Auth = () => {
         toast.error(error.message);
       } else {
         toast.success('Successfully signed in!');
+        // RouteGuard will handle the redirect
       }
     } catch (error) {
       toast.error('An unexpected error occurred');
@@ -142,6 +125,7 @@ const Auth = () => {
         toast.error(error.message);
       } else {
         toast.success('Account created successfully! Please check your email for verification.');
+        // RouteGuard will handle the redirect after email confirmation
       }
     } catch (error) {
       toast.error('An unexpected error occurred');
@@ -221,7 +205,7 @@ const Auth = () => {
                 </Button>
               </form>
             ) : step === 1 ? (
-              /* Sign Up Step 1: Basic Info */
+              // ... keep existing code (step 1 sign up form)
               <form onSubmit={handleSignUp} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -279,7 +263,7 @@ const Auth = () => {
                 </Button>
               </form>
             ) : (
-              /* Sign Up Step 2: Organization Details */
+              // ... keep existing code (step 2 sign up form)
               <form onSubmit={handleSignUp} className="space-y-4">
                 <Button
                   type="button"
@@ -295,7 +279,7 @@ const Auth = () => {
                   <Label htmlFor="userGroup">I am a:</Label>
                   <Select value={formData.userGroup} onValueChange={(value: UserGroup) => {
                     handleInputChange('userGroup', value);
-                    handleInputChange('userRole', ''); // Reset role when group changes
+                    handleInputChange('userRole', '');
                   }}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select your organization type" />
