@@ -1,16 +1,16 @@
 
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { FileText } from 'lucide-react';
+import { Upload } from 'lucide-react';
 
-const Documents = () => {
+const Uploads = () => {
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Documents</h1>
+          <h1 className="text-3xl font-bold">Document Uploads</h1>
           <p className="text-muted-foreground">
-            Upload and manage your business documents
+            Upload and manage client documents
           </p>
         </div>
       </div>
@@ -18,11 +18,11 @@ const Documents = () => {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center">
-            <FileText className="w-5 h-5 mr-2" />
-            Document Management
+            <Upload className="w-5 h-5 mr-2" />
+            Upload Management
           </CardTitle>
           <CardDescription>
-            Upload invoices, receipts, and other business documents
+            Bulk document upload and processing
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -36,4 +36,4 @@ const Documents = () => {
   );
 };
 
-export default Documents;
+export default Uploads;
