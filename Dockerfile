@@ -1,15 +1,22 @@
-# 1. Build your React UI
+# 1) Build your Vite React app into /app/dist
 FROM node:18-alpine AS builder
 WORKDIR /app
-COPY ui/package*.json ui/
-RUN cd ui && npm ci
-COPY ui/ ui/
-RUN cd ui && npm run build
+# Copy package files and install deps
+COPY package*.json tsconfig*.json ./
+RUN npm ci
 
-# 2. Serve with NGINX, but listen on 8080
+# Copy all source & build
+COPY . .
+RUN npm run build
+
+# 2) Serve the dist folder with Nginx on port 8080
 FROM nginx:stable-alpine
-# patch default.conf to use 8080
+# Patch default.conf to listen on 8080 instead of 80
 RUN sed -i 's/listen       80;/listen       8080;/' /etc/nginx/conf.d/default.conf
-COPY --from=builder /app/ui/dist /usr/share/nginx/html
+
+# Copy the built site into the Nginx html folder
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+# Tell Docker & Cloud Run that we listen on 8080
 EXPOSE 8080
 CMD ["nginx", "-g", "daemon off;"]
