@@ -1,14 +1,21 @@
-# Use official Node image
+# ======================
+# Stage 1: Build the app
+# ======================
+FROM node:18 AS builder
+
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY . .
+RUN npm run build
+
+# =============================
+# Stage 2: Serve the built app
+# =============================
 FROM node:18
 
-# Create app directory
 WORKDIR /app
-
-# Install serve globally
 RUN npm install -g serve
+COPY --from=builder /app/dist ./dist
 
-# Copy built files
-COPY dist /app/dist
-
-# Use serve to host dist folder
 CMD ["serve", "-s", "dist", "-l", "8080"]
